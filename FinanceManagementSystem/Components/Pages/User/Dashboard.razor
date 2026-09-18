@@ -1,0 +1,657 @@
+﻿@page "/dashboard"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "User")]
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@inject IAccountService AccountService
+@inject ITransactionService TransactionService
+@inject ILoanService LoanService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Dashboard</PageTitle>
+
+<div class="dashboard-page">
+
+    @if (IsLoading)
+    {
+        <div class="dashboard-loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            @ErrorMessage
+        </div>
+    }
+    else
+    {
+        <!-- =========================
+             Dashboard Header
+             ========================= -->
+
+        <div class="dashboard-header">
+
+            <div>
+                <h1 class="dashboard-greeting">
+                    Hello, @UserName!
+                </h1>
+
+                <p class="dashboard-subtitle">
+                    Here's an overview of your finances.
+                </p>
+            </div>
+
+            @* <form method="post" action="/account/logout">
+                <button type="submit" class="dashboard-logout">
+                    Logout
+                </button>
+            </form> *@
+
+        </div>
+
+
+        <!-- =========================
+             Summary Cards
+             ========================= -->
+
+        <div class="dashboard-stat-grid">
+
+            <!-- Total Balance -->
+            <div class="dashboard-stat-card balance-card">
+
+                <div class="stat-icon balance-icon">
+                    ₹
+                </div>
+
+                <div class="stat-content">
+                    <div class="stat-title">
+                        Total Balance
+                    </div>
+
+                    <div class="stat-value">
+                        @FormatCurrency(TotalBalance)
+                    </div>
+
+                    <div class="stat-description">
+                        Across all your accounts
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Total Income -->
+            <div class="dashboard-stat-card income-card">
+
+                <div class="stat-icon income-icon">
+                    ↗
+                </div>
+
+                <div class="stat-content">
+                    <div class="stat-title">
+                        Total Income
+                    </div>
+
+                    <div class="stat-value">
+                        @FormatCurrency(TotalIncome)
+                    </div>
+
+                    <div class="stat-description">
+                        Recorded income
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Total Expenses -->
+            <div class="dashboard-stat-card expense-card">
+
+                <div class="stat-icon expense-icon">
+                    ↘
+                </div>
+
+                <div class="stat-content">
+                    <div class="stat-title">
+                        Total Expenses
+                    </div>
+
+                    <div class="stat-value">
+                        @FormatCurrency(TotalExpenses)
+                    </div>
+
+                    <div class="stat-description">
+                        Recorded expenses
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Active Loans -->
+            <div class="dashboard-stat-card active-loan-card">
+
+                <div class="stat-icon active-loan-icon">
+                    ▤
+                </div>
+
+                <div class="stat-content">
+                    <div class="stat-title">
+                        Active Loans
+                    </div>
+
+                    <div class="stat-value">
+                        @ActiveLoanCount
+                    </div>
+
+                    <div class="stat-description">
+                        @(ActiveLoanCount == 1
+                            ? "You have 1 active loan"
+                            : $"You have {ActiveLoanCount} active loans")
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Pending Loans -->
+            <div class="dashboard-stat-card pending-loan-card">
+
+                <div class="stat-icon pending-loan-icon">
+                    ◷
+                </div>
+
+                <div class="stat-content">
+                    <div class="stat-title">
+                        Pending Loans
+                    </div>
+
+                    <div class="stat-value">
+                        @PendingLoanCount
+                    </div>
+
+                    <div class="stat-description">
+                        @(PendingLoanCount == 0
+                            ? "No pending loans"
+                            : "Awaiting approval")
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Outstanding Loans -->
+            <div class="dashboard-stat-card outstanding-card">
+
+                <div class="stat-icon outstanding-icon">
+                    ₹
+                </div>
+
+                <div class="stat-content">
+                    <div class="stat-title">
+                        Outstanding Loans
+                    </div>
+
+                    <div class="stat-value">
+                        @FormatCurrency(TotalOutstanding)
+                    </div>
+
+                    <div class="stat-description">
+                        Across @ActiveLoanCount active
+                        @(ActiveLoanCount == 1 ? "loan" : "loans")
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             Recent Transactions
+             ========================= -->
+
+        <section class="dashboard-section transactions-section">
+
+            <div class="section-header">
+
+                <div class="section-title-area">
+
+                    <div class="section-icon transactions-section-icon">
+                        ☷
+                    </div>
+
+                    <div>
+                        <h2>
+                            Recent Transactions
+                        </h2>
+
+                        <p>
+                            Your latest financial activity
+                        </p>
+                    </div>
+
+                </div>
+
+                <a href="/transactions" class="section-action">
+                    View All Transactions
+                    <span>→</span>
+                </a>
+
+            </div>
+
+
+            @if (!RecentTransactions.Any())
+            {
+                <div class="dashboard-empty">
+                    <p>No transactions recorded yet.</p>
+                </div>
+            }
+            else
+            {
+                <div class="dashboard-table-wrapper">
+
+                    <table class="dashboard-table">
+
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var transaction in RecentTransactions)
+                            {
+                                <tr>
+
+                                    <td>
+                                        <span class="transaction-badge @GetTransactionBadgeClass(transaction.TransactionType)">
+                                            @transaction.TransactionType
+                                        </span>
+                                    </td>
+
+                                    <td class="transaction-amount">
+                                        @FormatCurrency(transaction.Amount)
+                                    </td>
+
+                                    <td>
+                                        @(string.IsNullOrWhiteSpace(transaction.Description)
+                                            ? "-"
+                                            : transaction.Description)
+                                    </td>
+
+                                    <td>
+                                        @transaction.TransactionDate.ToLocalTime()
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </section>
+
+
+        <!-- =========================
+             Accounts + Loans
+             ========================= -->
+
+        <div class="dashboard-bottom-grid">
+
+
+            <!-- =========================
+                 My Accounts
+                 ========================= -->
+
+            <section class="dashboard-section accounts-section">
+
+                <div class="section-header">
+
+                    <div class="section-title-area">
+
+                        <div class="section-icon accounts-section-icon">
+                            ▣
+                        </div>
+
+                        <div>
+                            <h2>
+                                My Accounts
+                            </h2>
+
+                            <p>
+                                Quick view of your accounts
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <a href="/accounts" class="section-action">
+                        View All Accounts
+                        <span>→</span>
+                    </a>
+
+                </div>
+
+
+                @if (!Accounts.Any())
+                {
+                    <div class="dashboard-empty">
+                        <p>No accounts found.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="dashboard-list">
+
+                        @foreach (var account in Accounts.Take(3))
+                        {
+                            <div class="dashboard-list-item">
+
+                                <div class="list-item-icon account-item-icon">
+                                    ₹
+                                </div>
+
+                                <div class="list-item-info">
+
+                                    <div class="list-item-title">
+                                        @account.AccountName
+                                    </div>
+
+                                    <div class="list-item-subtitle">
+                                        @account.AccountType
+                                    </div>
+
+                                </div>
+
+                                <div class="list-item-value">
+                                    @FormatCurrency(account.Balance)
+                                </div>
+
+                            </div>
+                        }
+
+                    </div>
+                }
+
+            </section>
+
+
+            <!-- =========================
+                 My Loans
+                 ========================= -->
+
+            <section class="dashboard-section loans-section">
+
+                <div class="section-header">
+
+                    <div class="section-title-area">
+
+                        <div class="section-icon loans-section-icon">
+                            ▤
+                        </div>
+
+                        <div>
+                            <h2>
+                                My Loans
+                            </h2>
+
+                            <p>
+                                Overview of your loans
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <a href="/loans" class="section-action">
+                        View All Loans
+                        <span>→</span>
+                    </a>
+
+                </div>
+
+
+                @if (!Loans.Any())
+                {
+                    <div class="dashboard-empty">
+                        <p>No loans found.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="dashboard-list">
+
+                        @foreach (var loan in Loans.Take(3))
+                        {
+                            <div class="dashboard-list-item">
+
+                                <div class="list-item-icon loan-item-icon">
+                                    ▤
+                                </div>
+
+                                <div class="list-item-info">
+
+                                    <div class="list-item-title">
+                                        Loan #@loan.LoanId
+                                    </div>
+
+                                    <div class="list-item-subtitle">
+                                        @loan.Status
+                                    </div>
+
+                                </div>
+
+                                <div class="loan-item-right">
+
+                                    <div class="list-item-value">
+                                        @FormatCurrency(loan.OutstandingAmount)
+                                    </div>
+
+                                    <div class="loan-item-label">
+                                        Outstanding
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        }
+
+                    </div>
+                }
+
+            </section>
+
+        </div>
+
+    }
+
+</div>
+
+
+@code {
+
+    private IEnumerable<Account> Accounts =
+        Enumerable.Empty<Account>();
+
+    private IEnumerable<Transaction> Transactions =
+        Enumerable.Empty<Transaction>();
+
+    private IEnumerable<Loan> Loans =
+        Enumerable.Empty<Loan>();
+
+    private IEnumerable<Transaction> RecentTransactions =>
+        Transactions
+            .OrderByDescending(t => t.TransactionDate)
+            .Take(5);
+
+    private bool IsLoading = true;
+
+    private string? ErrorMessage;
+
+    private string UserName = "User";
+
+
+    /* =========================
+       Dashboard Calculations
+       ========================= */
+
+    private decimal TotalBalance =>
+        Accounts.Sum(a => a.Balance);
+
+
+    private decimal TotalIncome =>
+        Transactions
+            .Where(t => t.TransactionType == "Income")
+            .Sum(t => t.Amount);
+
+
+    private decimal TotalExpenses =>
+        Transactions
+            .Where(t => t.TransactionType == "Expense")
+            .Sum(t => t.Amount);
+
+
+    private int ActiveLoanCount =>
+        Loans.Count(l => l.Status == "Active");
+
+
+    private int PendingLoanCount =>
+        Loans.Count(l => l.Status == "Pending");
+
+
+    private decimal TotalOutstanding =>
+        Loans
+            .Where(l => l.Status == "Active")
+            .Sum(l => l.OutstandingAmount);
+
+
+    /* =========================
+       Initialization
+       ========================= */
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardAsync();
+    }
+
+
+    private async Task LoadDashboardAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = null;
+
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            if (!user.Identity?.IsAuthenticated ?? true)
+            {
+                throw new UnauthorizedAccessException(
+                    "User is not authenticated.");
+            }
+
+            var userIdClaim =
+                user.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                throw new UnauthorizedAccessException(
+                    "User ID was not found.");
+            }
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            UserName =
+                user.FindFirst(ClaimTypes.Name)?.Value
+                ?? "User";
+
+
+            /* Load user's accounts */
+
+            Accounts =
+                await AccountService
+                    .GetMyAccountsAsync(userId);
+
+
+            /* Load user's transactions */
+
+            Transactions =
+                await TransactionService
+                    .GetMyTransactionsAsync(userId);
+
+
+            /* Load user's loans */
+
+            Loans =
+                await LoanService
+                    .GetMyLoansAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+
+    /* =========================
+       Formatting
+       ========================= */
+
+    private static string FormatCurrency(decimal amount)
+    {
+        return $"₹{amount:N2}";
+    }
+
+
+    /* =========================
+       Transaction Badge
+       ========================= */
+
+    private static string GetTransactionBadgeClass(
+        string transactionType)
+    {
+        return transactionType switch
+        {
+            "Income" => "transaction-income",
+
+            "Expense" => "transaction-expense",
+
+            "LoanPayment" => "transaction-loan-payment",
+
+            "LoanDisbursement" => "transaction-loan-disbursement",
+
+            "Deposit" => "transaction-deposit",
+
+            "Withdrawal" => "transaction-withdrawal",
+
+            "Transfer" => "transaction-transfer",
+
+            _ => "transaction-default"
+        };
+    }
+}
+

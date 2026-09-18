@@ -1,0 +1,316 @@
+﻿@page "/admin/users/{UserId:int}"
+
+@using Microsoft.AspNetCore.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IUserService UserService
+@inject IAccountService AccountService
+@inject ILoanService LoanService
+@inject ITransactionService TransactionService
+
+<PageTitle>User Details</PageTitle>
+
+<div class="admin-loans-page">
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger admin-loans-alert">
+            @errorMessage
+        </div>
+    }
+
+    @if (user == null && string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="admin-loans-section admin-loans-empty">
+            <div class="admin-loans-empty-icon">
+                <i class="bi bi-person"></i>
+            </div>
+
+            <h3>Loading user...</h3>
+        </div>
+    }
+    else if (user == null)
+    {
+        <div class="admin-loans-section admin-loans-empty">
+            <div class="admin-loans-empty-icon">
+                <i class="bi bi-person-x"></i>
+            </div>
+
+            <h3>User not found</h3>
+
+            <a href="/admin/users" class="btn btn-primary mt-3">
+                Back to Users
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="admin-loans-header">
+            <div>
+                <h1>@user.Name</h1>
+                <p>View customer profile and financial information.</p>
+            </div>
+
+            <a href="/admin/users" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to Users
+            </a>
+        </div>
+
+        <!-- User Information -->
+
+        <div class="admin-loans-section mb-4">
+
+            <h3 class="mb-3">
+                <i class="bi bi-person me-2"></i>
+                User Information
+            </h3>
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <strong>User ID</strong>
+                    <p>#@user.UserId</p>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>Name</strong>
+                    <p>@user.Name</p>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>Email</strong>
+                    <p>@user.Email</p>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>Role</strong>
+                    <p>@user.Role</p>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>Joined</strong>
+                    <p>@user.CreatedAt.ToString("dd MMM yyyy")</p>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Accounts -->
+
+        <div class="admin-loans-section mb-4">
+
+            <h3 class="mb-3">
+                <i class="bi bi-wallet2 me-2"></i>
+                Accounts
+            </h3>
+
+            @if (!accounts.Any())
+            {
+                <p class="text-muted">No accounts found.</p>
+            }
+            else
+            {
+                <div class="admin-loans-table-wrapper">
+                    <table class="admin-loans-table">
+
+                        <thead>
+                            <tr>
+                                <th>Account ID</th>
+                                <th>Type</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var account in accounts)
+                            {
+                                <tr>
+                                    <td class="admin-loan-id">
+                                        #@account.AccountId
+                                    </td>
+
+                                    <td>
+                                        @account.AccountType
+                                    </td>
+
+                                    <td class="admin-loan-amount">
+                                        ₹@account.Balance.ToString("N2")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+                </div>
+            }
+
+        </div>
+
+        <!-- Transactions -->
+
+        <div class="admin-loans-section mb-4">
+
+            <h3 class="mb-3">
+                <i class="bi bi-arrow-left-right me-2"></i>
+                Transactions
+            </h3>
+
+            @if (!transactions.Any())
+            {
+                <p class="text-muted">No transactions found.</p>
+            }
+            else
+            {
+                <div class="admin-loans-table-wrapper">
+                    <table class="admin-loans-table">
+
+                        <thead>
+                            <tr>
+                                <th>Transaction ID</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var transaction in transactions)
+                            {
+                                <tr>
+                                    <td class="admin-loan-id">
+                                        #@transaction.TransactionId
+                                    </td>
+
+                                    <td>
+                                        @transaction.TransactionType
+                                    </td>
+
+                                    <td class="admin-loan-amount">
+                                        ₹@transaction.Amount.ToString("N2")
+                                    </td>
+
+                                    <td>
+                                        @(string.IsNullOrWhiteSpace(transaction.Description)
+                                            ? "-"
+                                            : transaction.Description)
+                                    </td>
+
+                                    <td>
+                                        @transaction.TransactionDate.ToString("dd MMM yyyy")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+                </div>
+            }
+
+        </div>
+
+        <!-- Loans -->
+
+        <div class="admin-loans-section">
+
+            <h3 class="mb-3">
+                <i class="bi bi-cash-stack me-2"></i>
+                Loans
+            </h3>
+
+            @if (!loans.Any())
+            {
+                <p class="text-muted">No loans found.</p>
+            }
+            else
+            {
+                <div class="admin-loans-table-wrapper">
+                    <table class="admin-loans-table">
+
+                        <thead>
+                            <tr>
+                                <th>Loan ID</th>
+                                <th>Principal</th>
+                                <th>Total Payable</th>
+                                <th>Outstanding</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var loan in loans)
+                            {
+                                <tr>
+                                    <td class="admin-loan-id">
+                                        #@loan.LoanId
+                                    </td>
+
+                                    <td class="admin-loan-amount">
+                                        ₹@loan.PrincipalAmount.ToString("N2")
+                                    </td>
+
+                                    <td class="admin-loan-amount">
+                                        ₹@loan.TotalPayable.ToString("N2")
+                                    </td>
+
+                                    <td class="admin-loan-outstanding">
+                                        ₹@loan.OutstandingAmount.ToString("N2")
+                                    </td>
+
+                                    <td>
+                                        @loan.Status
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+                </div>
+            }
+
+        </div>
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public int UserId { get; set; }
+
+    private User? user;
+    private IEnumerable<Account> accounts = Enumerable.Empty<Account>();
+    private IEnumerable<Loan> loans = Enumerable.Empty<Loan>();
+    private IEnumerable<Transaction> transactions =
+    Enumerable.Empty<Transaction>();
+
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            user = await UserService.GetByIdAsync(UserId);
+
+            if (user == null)
+                return;
+
+            accounts = await AccountService.GetMyAccountsAsync(UserId);
+
+            transactions = await TransactionService.GetMyTransactionsAsync(UserId);
+
+            var allLoans = await LoanService.GetAllLoansAsync();
+
+            loans = allLoans
+                .Where(loan => loan.UserId == UserId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

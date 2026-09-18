@@ -1,0 +1,750 @@
+﻿@page "/loans"
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@attribute [Authorize(Roles = "User")]
+
+@inject ILoanService LoanService
+@inject ILoanPaymentService LoanPaymentService
+@inject IAccountService AccountService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILoanProductService LoanProductService
+
+<PageTitle>Loans</PageTitle>
+
+<div class="loans-page">
+
+    <div class="loans-header">
+        <div>
+            <h1>Loans</h1>
+            <p>Apply for loans, track repayments and manage your borrowing</p>
+        </div>
+    </div>
+
+<!-- =========================
+     Loan Application
+     ========================= -->
+
+<div class="loan-section">
+
+    <div class="loan-section-heading">
+
+        <div>
+            <h3>
+                <i class="bi bi-bank me-2 text-primary"></i>
+                Apply for a Loan
+            </h3>
+
+            <p class="text-muted mb-0">
+                Submit a new loan application with your preferred terms
+            </p>
+        </div>
+
+    </div>
+
+
+    @if (!string.IsNullOrEmpty(applicationError))
+    {
+        <div class="alert alert-danger loan-alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @applicationError
+        </div>
+    }
+
+
+    @if (!string.IsNullOrEmpty(applicationSuccess))
+    {
+        <div class="alert alert-success loan-alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @applicationSuccess
+        </div>
+    }
+
+
+    <div class="loan-form-grid">
+
+        <div>
+            <label class="form-label">
+                Account
+            </label>
+
+            <select class="form-select"
+                    @bind="applicationAccountId">
+
+                <option value="0">
+                    Select account
+                </option>
+
+                @foreach (var account in accounts)
+                {
+                    <option value="@account.AccountId">
+                        @account.AccountName -
+                        ₹@account.Balance.ToString("N2")
+                    </option>
+                }
+
+            </select>
+        </div>
+
+
+        <div>
+            <label class="form-label">
+                Loan Amount
+            </label>
+
+            <input type="number"
+                   class="form-control"
+                   @bind="applicationPrincipalAmount"
+                   min="1"
+                   step="0.01"
+                   placeholder="Enter loan amount" />
+        </div>
+
+            <div>
+                <label class="form-label">
+                    Loan Product
+                </label>
+
+                <select class="form-select"
+                        @bind="applicationLoanProductId">
+
+                    <option value="0">
+                        Select loan product
+                    </option>
+
+                    @foreach (var product in loanProducts)
+                    {
+                        <option value="@product.LoanProductId">
+                            @product.Name -
+                            @product.InterestRate.ToString("0.##")% @product.InterestType
+                        </option>
+                    }
+
+                </select>
+            </div>
+
+            @if (applicationLoanProductId != 0)
+            {
+                var selectedProduct =
+                    loanProducts.FirstOrDefault(
+                        p => p.LoanProductId == applicationLoanProductId);
+
+                if (selectedProduct != null)
+                {
+                    <div>
+                        <label class="form-label">
+                            Interest Rate
+                        </label>
+
+                        <input class="form-control"
+                               value="@($"{selectedProduct.InterestRate:0.##}% {selectedProduct.InterestType}")"
+                               readonly />
+                    </div>
+                }
+            }
+
+        <div>
+            <label class="form-label">
+                Tenure
+            </label>
+
+            <div class="input-group">
+                <input type="number"
+                       class="form-control"
+                       @bind="applicationTenureMonths"
+                       min="1"
+                       placeholder="Enter tenure" />
+
+                <span class="input-group-text">
+                    Months
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="loan-form-action">
+
+        <button type="button"
+                class="btn btn-primary"
+                @onclick="ApplyLoanAsync">
+
+            <i class="bi bi-send me-2"></i>
+            Apply for Loan
+
+        </button>
+
+    </div>
+
+</div>
+
+    <!-- =========================
+     My Loans
+     ========================= -->
+
+    <div class="loan-section">
+
+        <div class="loan-section-heading loan-heading-with-count">
+
+            <div>
+                <h3>
+                    <i class="bi bi-file-earmark-text me-2 text-primary"></i>
+                    My Loans
+                </h3>
+
+                <p class="text-muted mb-0">
+                    Track your loan applications and outstanding balances
+                </p>
+            </div>
+
+            <span class="loan-count">
+                @loans.Count() loan@(loans.Count() == 1 ? "" : "s")
+            </span>
+
+        </div>
+
+
+        @if (!loans.Any())
+        {
+            <div class="loan-empty">
+
+                <i class="bi bi-file-earmark-text"></i>
+
+                <p>You have no loan applications.</p>
+
+            </div>
+        }
+        else
+        {
+            <div class="loan-table-wrapper">
+
+                <table class="loan-table">
+
+                    <thead>
+                        <tr>
+                            <th>Loan ID</th>
+                            <th>Principal</th>
+                            <th>Interest</th>
+                            <th>Total Payable</th>
+                            <th>Outstanding</th>
+                            <th>Type</th>
+                            <th>Tenure</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var loan in loans)
+                        {
+                            <tr>
+
+                                <td class="loan-id">
+                                    #@loan.LoanId
+                                </td>
+
+                                <td>
+                                    ₹@loan.PrincipalAmount.ToString("N2")
+                                </td>
+
+                                <td>
+                                    ₹@loan.TotalInterest.ToString("N2")
+                                </td>
+
+                                <td class="loan-amount">
+                                    ₹@loan.TotalPayable.ToString("N2")
+                                </td>
+
+                                <td class="loan-outstanding">
+                                    ₹@loan.OutstandingAmount.ToString("N2")
+                                </td>
+
+                                <td>
+                                    @loan.InterestType
+                                </td>
+
+                                <td>
+                                    @loan.TenureMonths months
+                                </td>
+
+                                <td>
+
+                                    @if (loan.Status == "Pending")
+                                    {
+                                        <span class="loan-status loan-status-pending">
+                                            Pending
+                                        </span>
+                                    }
+                                    else if (loan.Status == "Active")
+                                    {
+                                        <span class="loan-status loan-status-active">
+                                            Active
+                                        </span>
+                                    }
+                                    else if (loan.Status == "Paid")
+                                    {
+                                        <span class="loan-status loan-status-paid">
+                                            Paid
+                                        </span>
+                                    }
+                                    else if (loan.Status == "Rejected")
+                                    {
+                                        <span class="loan-status loan-status-rejected">
+                                            Rejected
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="loan-status loan-status-other">
+                                            @loan.Status
+                                        </span>
+                                    }
+
+                                </td>
+
+                                <td>
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       href="@($"/loans/{loan.LoanId}")">
+                                        <i class="bi bi-eye me-1"></i>
+                                        View
+                                    </a>
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+    <!-- =========================
+     Make Loan Payment
+     ========================= -->
+
+    <div class="loan-section">
+
+        <div class="loan-section-heading">
+
+            <div>
+                <h3>
+                    <i class="bi bi-credit-card me-2 text-primary"></i>
+                    Make Loan Payment
+                </h3>
+
+                <p class="text-muted mb-0">
+                    Make a partial or full payment toward an active loan
+                </p>
+            </div>
+
+        </div>
+
+
+        @if (!string.IsNullOrEmpty(paymentError))
+        {
+            <div class="alert alert-danger loan-alert">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                @paymentError
+            </div>
+        }
+
+
+        @if (!string.IsNullOrEmpty(paymentSuccess))
+        {
+            <div class="alert alert-success loan-alert">
+                <i class="bi bi-check-circle me-2"></i>
+                @paymentSuccess
+            </div>
+        }
+
+
+        @if (!loans.Any(l => l.Status == "Active"))
+        {
+            <div class="loan-empty">
+
+                <i class="bi bi-check-circle"></i>
+
+                <p>You do not have any active loans.</p>
+
+            </div>
+        }
+        else
+        {
+            <div class="loan-form-grid">
+
+                <div>
+                    <label class="form-label">
+                        Loan
+                    </label>
+
+                    <select class="form-select"
+                            @bind="paymentLoanId">
+
+                        <option value="0">
+                            Select active loan
+                        </option>
+
+                        @foreach (var loan in loans.Where(l => l.Status == "Active"))
+                        {
+                            <option value="@loan.LoanId">
+                                Loan #@loan.LoanId -
+                                Outstanding ₹@loan.OutstandingAmount.ToString("N2")
+                            </option>
+                        }
+
+                    </select>
+                </div>
+
+
+                <div>
+                    <label class="form-label">
+                        Payment Account
+                    </label>
+
+                    <select class="form-select"
+                            @bind="paymentAccountId">
+
+                        <option value="0">
+                            Select account
+                        </option>
+
+                        @foreach (var account in accounts)
+                        {
+                            <option value="@account.AccountId">
+                                @account.AccountName -
+                                ₹@account.Balance.ToString("N2")
+                            </option>
+                        }
+
+                    </select>
+                </div>
+
+
+                <div>
+                    <label class="form-label">
+                        Payment Amount
+                    </label>
+
+                    <input type="number"
+                           class="form-control"
+                           @bind="paymentAmount"
+                           min="0.01"
+                           step="0.01"
+                           placeholder="Enter payment amount" />
+
+                </div>
+
+            </div>
+
+
+            <div class="loan-form-action">
+
+                <button type="button"
+                        class="btn btn-primary"
+                        @onclick="MakePaymentAsync">
+
+                    <i class="bi bi-cash-coin me-2"></i>
+                    Make Payment
+
+                </button>
+
+            </div>
+        }
+
+    </div>
+
+<!-- =========================
+     Payment History
+     ========================= -->
+    @if (selectedLoanPayments.Any())
+    {
+        <div class="loan-section">
+            <div class="loan-section-heading">
+                <div class="loan-heading-with-count">
+                    <div>
+                        <h3>Payment History</h3>
+                        <p>View your loan repayment details and payment breakdown</p>
+                    </div>
+
+                    <span class="loan-count">
+                        @selectedLoanPayments.Count() Payments
+                    </span>
+                </div>
+            </div>
+
+            <div class="loan-table-wrapper">
+                <table class="loan-table payment-history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Principal Paid</th>
+                            <th>Interest Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in selectedLoanPayments)
+                        {
+                            <tr>
+                                <td>@payment.PaymentDate.ToLocalTime()</td>
+                                <td class="loan-amount">₹@payment.Amount</td>
+                                <td>₹@payment.PrincipalPaid</td>
+                                <td>₹@payment.InterestPaid</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+</div>
+
+@code {
+
+    // =========================
+    // Data
+    // =========================
+
+    private IEnumerable<Account> accounts =
+        Enumerable.Empty<Account>();
+
+    private IEnumerable<LoanProduct> loanProducts =
+    Enumerable.Empty<LoanProduct>();
+
+    private IEnumerable<Loan> loans =
+        Enumerable.Empty<Loan>();
+
+    private IEnumerable<LoanPayment> selectedLoanPayments =
+        Enumerable.Empty<LoanPayment>();
+
+
+    // =========================
+    // Loan Application
+    // =========================
+
+    private int applicationAccountId;
+
+    private decimal applicationPrincipalAmount;
+
+    private int applicationLoanProductId;
+
+    private int applicationTenureMonths;
+
+
+    // =========================
+    // Loan Payment
+    // =========================
+
+    private int paymentLoanId;
+
+    private int paymentAccountId;
+
+    private decimal paymentAmount;
+
+
+    // =========================
+    // Messages
+    // =========================
+
+    private string? applicationError;
+
+    private string? applicationSuccess;
+
+    private string? paymentError;
+
+    private string? paymentSuccess;
+
+
+    // =========================
+    // Initialization
+    // =========================
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+
+    // =========================
+    // Load Data
+    // =========================
+
+    private async Task LoadDataAsync()
+    {
+        var authState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var userIdClaim =
+            authState.User
+                .FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null)
+            return;
+
+        var userId =
+            int.Parse(userIdClaim.Value);
+
+        accounts =
+            await AccountService
+                .GetMyAccountsAsync(userId);
+
+        loanProducts =
+    await LoanProductService
+        .GetActiveAsync();
+
+        loans =
+            await LoanService
+                .GetMyLoansAsync(userId);
+
+        // Refresh payment history if a loan is selected.
+        if (paymentLoanId != 0)
+        {
+            selectedLoanPayments =
+                await LoanPaymentService
+                    .GetPaymentHistoryAsync(
+                        userId,
+                        paymentLoanId);
+        }
+    }
+
+
+    // =========================
+    // Apply For Loan
+    // =========================
+
+    private async Task ApplyLoanAsync()
+    {
+        applicationError = null;
+        applicationSuccess = null;
+
+        try
+        {
+            var userId =
+                await GetCurrentUserIdAsync();
+
+            if (userId == null)
+            {
+                applicationError =
+                    "User is not authenticated.";
+
+                return;
+            }
+
+            var loanId =
+    await LoanService.ApplyForLoanAsync(
+        userId.Value,
+        applicationAccountId,
+        applicationLoanProductId,
+        applicationPrincipalAmount,
+        applicationTenureMonths);
+
+            applicationSuccess =
+                $"Loan application submitted successfully. Loan ID: {loanId}";
+
+            ResetApplicationForm();
+
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            applicationError = ex.Message;
+        }
+    }
+
+
+    // =========================
+    // Make Payment
+    // =========================
+
+    private async Task MakePaymentAsync()
+    {
+        paymentError = null;
+        paymentSuccess = null;
+
+        try
+        {
+            var userId =
+                await GetCurrentUserIdAsync();
+
+            if (userId == null)
+            {
+                paymentError =
+                    "User is not authenticated.";
+
+                return;
+            }
+
+            await LoanPaymentService.MakePaymentAsync(
+                userId.Value,
+                paymentLoanId,
+                paymentAccountId,
+                paymentAmount);
+
+            paymentSuccess =
+                "Loan payment completed successfully.";
+
+            await LoadDataAsync();
+
+            paymentAmount = 0;
+
+            if (paymentLoanId != 0)
+            {
+                selectedLoanPayments =
+                    await LoanPaymentService
+                        .GetPaymentHistoryAsync(
+                            userId.Value,
+                            paymentLoanId);
+            }
+        }
+        catch (Exception ex)
+        {
+            paymentError = ex.Message;
+        }
+    }
+
+
+    // =========================
+    // Get Current User
+    // =========================
+
+    private async Task<int?> GetCurrentUserIdAsync()
+    {
+        var authState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var userIdClaim =
+            authState.User
+                .FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null)
+            return null;
+
+        return int.Parse(userIdClaim.Value);
+    }
+
+
+    // =========================
+    // Reset Application Form
+    // =========================
+
+    private void ResetApplicationForm()
+    {
+        applicationAccountId = 0;
+        applicationLoanProductId = 0;
+        applicationPrincipalAmount = 0;
+        applicationTenureMonths = 0;
+    }
+}

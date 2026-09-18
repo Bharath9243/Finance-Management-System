@@ -1,0 +1,278 @@
+﻿/* =========================================
+   Finance Management - Transactions
+   ========================================= */
+
+.transactions-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* =========================
+   Header
+   ========================= */
+
+.transactions-header {
+    margin-bottom: 32px;
+}
+
+    .transactions-header h1 {
+        margin: 0;
+        color: var(--app-text);
+        font-size: 32px;
+        font-weight: 700;
+    }
+
+    .transactions-header p {
+        margin: 8px 0 0;
+        color: var(--app-text-muted);
+        font-size: 15px;
+    }
+
+/* =========================
+   Sections
+   ========================= */
+
+.transaction-section {
+    margin-bottom: 24px;
+    padding: 28px;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.section-heading {
+    margin-bottom: 24px;
+}
+
+    .section-heading h3 {
+        margin: 0 0 6px;
+        color: var(--app-text);
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .section-heading p {
+        color: var(--app-text-muted) !important;
+    }
+
+/* =========================
+   Forms
+   ========================= */
+
+.transaction-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.transaction-section .form-label {
+    margin-bottom: 8px;
+    color: var(--app-text);
+    font-weight: 500;
+}
+
+.transaction-section .form-control,
+.transaction-section .form-select {
+    min-height: 46px;
+    border-color: var(--app-border);
+    border-radius: 10px;
+    background: var(--app-surface);
+    color: var(--app-text);
+}
+
+    .transaction-section .form-control::placeholder {
+        color: var(--app-text-muted);
+    }
+
+    .transaction-section .form-control:focus,
+    .transaction-section .form-select:focus {
+        border-color: var(--app-primary);
+        background: var(--app-surface);
+        color: var(--app-text);
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12);
+    }
+
+.form-action {
+    margin-top: 20px;
+}
+
+/* =========================
+   Messages
+   ========================= */
+
+.transaction-message {
+    margin-top: 18px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.transaction-success {
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+}
+
+/* =========================
+   Filter
+   ========================= */
+
+.transaction-filter {
+    max-width: 320px;
+    margin-bottom: 24px;
+}
+
+    .transaction-filter .form-label {
+        margin-bottom: 8px;
+    }
+
+/* =========================
+   Table
+   ========================= */
+
+.transaction-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--app-border);
+    border-radius: 14px;
+}
+
+.transaction-table {
+    width: 100%;
+    min-width: 850px;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+    .transaction-table thead th {
+        padding: 16px;
+        background: var(--app-surface-secondary);
+        color: var(--app-text);
+        border-bottom: 1px solid var(--app-border);
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+    }
+
+    .transaction-table tbody tr {
+        background: var(--app-surface);
+        transition: background-color 0.15s ease;
+    }
+
+        .transaction-table tbody tr:nth-child(even) {
+            background: var(--app-surface-secondary);
+        }
+
+        .transaction-table tbody tr:hover {
+            background: var(--app-primary-soft);
+        }
+
+    .transaction-table tbody td {
+        padding: 17px 16px;
+        color: var(--app-text);
+        border-bottom: 1px solid var(--app-border);
+        vertical-align: middle;
+    }
+
+    .transaction-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+.transaction-amount {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* =========================
+   Transaction Type Badges
+   ========================= */
+
+.transaction-type-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.transaction-income {
+    background: rgba(25, 135, 84, 0.15);
+    color: #198754;
+}
+
+.transaction-expense {
+    background: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
+}
+
+.transaction-transfer,
+.transaction-deposit {
+    background: rgba(13, 110, 253, 0.15);
+    color: #0d6efd;
+}
+
+.transaction-loan-payment {
+    background: rgba(111, 78, 180, 0.15);
+    color: #6f4eb4;
+}
+
+.transaction-loan-disbursement {
+    background: rgba(245, 158, 11, 0.16);
+    color: #d97706;
+}
+
+.transaction-other {
+    background: rgba(108, 117, 125, 0.12);
+    color: #6c757d;
+}
+
+/* =========================
+   Empty State
+   ========================= */
+
+.transaction-empty {
+    padding: 50px 20px;
+    color: var(--app-text-muted);
+    text-align: center;
+}
+
+    .transaction-empty i {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 38px;
+    }
+
+    .transaction-empty p {
+        margin: 0;
+    }
+
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width: 900px) {
+    .transaction-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .transaction-section {
+        padding: 20px;
+        border-radius: 14px;
+    }
+
+    .transactions-header h1 {
+        font-size: 28px;
+    }
+
+    .transaction-filter {
+        max-width: 100%;
+    }
+}

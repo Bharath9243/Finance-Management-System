@@ -1,0 +1,144 @@
+﻿@page "/admin/activity-history"
+
+@using Microsoft.AspNetCore.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IAdminActivityService AdminActivityService
+
+<PageTitle>Activity History</PageTitle>
+
+<div class="container py-4">
+
+    <div class="mb-4">
+        <h1>Activity History</h1>
+        <p class="text-muted mb-0">
+            View important actions performed by administrators.
+        </p>
+    </div>
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            @if (activities == null)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            }
+            else if (!activities.Any())
+            {
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-clock-history fs-1"></i>
+
+                    <h4 class="mt-3">
+                        No activity recorded
+                    </h4>
+
+                    <p class="mb-0">
+                        Admin actions will appear here.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Admin</th>
+                                <th>Action</th>
+                                <th>Entity</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var activity in activities)
+                            {
+                                <tr>
+
+                                    <td>
+                                        @activity.CreatedAt.ToString(
+                                            "dd MMM yyyy, hh:mm tt")
+                                    </td>
+
+                                    <td>
+                                        Admin #@activity.AdminUserId
+                                    </td>
+
+                                    <td>
+                                        @if (activity.Action == "Approve")
+                                        {
+                                            <span class="badge bg-success">
+                                                Approve
+                                            </span>
+                                        }
+                                        else if (activity.Action == "Reject")
+                                        {
+                                            <span class="badge bg-danger">
+                                                Reject
+                                            </span>
+                                        }
+                                        else if (activity.Action == "Create")
+                                        {
+                                            <span class="badge bg-primary">
+                                                Create
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                @activity.Action
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @activity.EntityType
+                                        @if (activity.EntityId.HasValue)
+                                        {
+                                            <span>
+                                                #@activity.EntityId
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @activity.Description
+                                    </td>
+
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+
+    private IEnumerable<AdminActivity>? activities;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activities =
+            await AdminActivityService.GetAllAsync();
+    }
+}
+

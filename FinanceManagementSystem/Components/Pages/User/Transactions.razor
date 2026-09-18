@@ -1,0 +1,810 @@
+﻿@page "/transactions"
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@attribute [Authorize(Roles = "User")]
+
+@inject IAccountService AccountService
+@inject ICategoryService CategoryService
+@inject ITransactionService TransactionService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Transactions</PageTitle>
+
+<div class="transactions-page">
+
+    <!-- Page Header -->
+    <div class="transactions-header">
+        <div>
+            <h1>Transactions</h1>
+            <p>Track your income, expenses, transfers and financial activity</p>
+        </div>
+    </div>
+
+
+    <!-- =========================
+         ADD INCOME
+         ========================= -->
+
+    <div class="transaction-section">
+
+        <div class="section-heading">
+            <div>
+                <h3>
+                    <i class="bi bi-arrow-down-circle me-2 text-success"></i>
+                    Add Income
+                </h3>
+
+                <p class="text-muted mb-0">
+                    Record money received into one of your accounts
+                </p>
+            </div>
+        </div>
+
+        <div class="transaction-form-grid">
+
+            <div>
+                <label class="form-label">Account</label>
+
+                <select class="form-select"
+                        @bind="incomeAccountId">
+
+                    <option value="0">Select Account</option>
+
+                    @foreach (var account in accounts ?? Enumerable.Empty<Account>())
+                    {
+                        <option value="@account.AccountId">
+                            @account.AccountName - ₹@account.Balance.ToString("N2")
+                        </option>
+                    }
+
+                </select>
+            </div>
+
+
+            <div>
+                <label class="form-label">Category</label>
+
+                <select class="form-select"
+                        @bind="incomeCategoryId">
+
+                    <option value="0">Select Category</option>
+
+                    @foreach (var category in categories?
+                        .Where(c => c.Type == "Income")
+                        ?? Enumerable.Empty<Category>())
+                    {
+                        <option value="@category.CategoryId">
+                            @category.Name
+                        </option>
+                    }
+
+                </select>
+            </div>
+
+
+            <div>
+                <label class="form-label">Amount</label>
+
+                <input class="form-control"
+                       type="number"
+                       step="0.01"
+                       min="0.01"
+                       @bind="incomeAmount"
+                       placeholder="Enter amount" />
+            </div>
+
+        </div>
+
+
+        <div class="mt-3">
+
+            <label class="form-label">Description</label>
+
+            <input class="form-control"
+                   @bind="incomeDescription"
+                   placeholder="e.g. Salary, freelance payment" />
+
+        </div>
+
+
+        <div class="form-action">
+
+            <button type="button"
+                    class="btn btn-success"
+                    @onclick="AddIncomeAsync">
+
+                <i class="bi bi-plus-circle me-2"></i>
+                Add Income
+
+            </button>
+
+        </div>
+
+
+        @if (!string.IsNullOrEmpty(incomeMessage))
+        {
+            <div class="transaction-message transaction-success">
+                <i class="bi bi-check-circle me-2"></i>
+                @incomeMessage
+            </div>
+        }
+
+    </div>
+
+
+    <!-- =========================
+         ADD EXPENSE
+         ========================= -->
+
+    <div class="transaction-section">
+
+        <div class="section-heading">
+            <div>
+                <h3>
+                    <i class="bi bi-arrow-up-circle me-2 text-danger"></i>
+                    Add Expense
+                </h3>
+
+                <p class="text-muted mb-0">
+                    Record money spent from one of your accounts
+                </p>
+            </div>
+        </div>
+
+
+        <div class="transaction-form-grid">
+
+            <div>
+                <label class="form-label">Account</label>
+
+                <select class="form-select"
+                        @bind="expenseAccountId">
+
+                    <option value="0">Select Account</option>
+
+                    @foreach (var account in accounts ?? Enumerable.Empty<Account>())
+                    {
+                        <option value="@account.AccountId">
+                            @account.AccountName - ₹@account.Balance.ToString("N2")
+                        </option>
+                    }
+
+                </select>
+            </div>
+
+
+            <div>
+                <label class="form-label">Category</label>
+
+                <select class="form-select"
+                        @bind="expenseCategoryId">
+
+                    <option value="0">Select Category</option>
+
+                    @foreach (var category in categories?
+                        .Where(c => c.Type == "Expense")
+                        ?? Enumerable.Empty<Category>())
+                    {
+                        <option value="@category.CategoryId">
+                            @category.Name
+                        </option>
+                    }
+
+                </select>
+            </div>
+
+
+            <div>
+                <label class="form-label">Amount</label>
+
+                <input class="form-control"
+                       type="number"
+                       step="0.01"
+                       min="0.01"
+                       @bind="expenseAmount"
+                       placeholder="Enter amount" />
+            </div>
+
+        </div>
+
+
+        <div class="mt-3">
+
+            <label class="form-label">Description</label>
+
+            <input class="form-control"
+                   @bind="expenseDescription"
+                   placeholder="e.g. Groceries, rent, shopping" />
+
+        </div>
+
+
+        <div class="form-action">
+
+            <button type="button"
+                    class="btn btn-danger"
+                    @onclick="AddExpenseAsync">
+
+                <i class="bi bi-dash-circle me-2"></i>
+                Add Expense
+
+            </button>
+
+        </div>
+
+
+        @if (!string.IsNullOrEmpty(expenseMessage))
+        {
+            <div class="transaction-message transaction-success">
+                <i class="bi bi-check-circle me-2"></i>
+                @expenseMessage
+            </div>
+        }
+
+    </div>
+
+
+    <!-- =========================
+         TRANSFER MONEY
+         ========================= -->
+
+    <div class="transaction-section">
+
+        <div class="section-heading">
+            <div>
+                <h3>
+                    <i class="bi bi-arrow-left-right me-2 text-primary"></i>
+                    Transfer Money
+                </h3>
+
+                <p class="text-muted mb-0">
+                    Move money between your accounts
+                </p>
+            </div>
+        </div>
+
+
+        <div class="transaction-form-grid">
+
+            <div>
+                <label class="form-label">From Account</label>
+
+                <select class="form-select"
+                        @bind="fromAccountId">
+
+                    <option value="0">Select source account</option>
+
+                    @foreach (var account in accounts)
+                    {
+                        <option value="@account.AccountId">
+                            @account.AccountName - ₹@account.Balance.ToString("N2")
+                        </option>
+                    }
+
+                </select>
+            </div>
+
+
+            <div>
+                <label class="form-label">To Account</label>
+
+                <select class="form-select"
+                        @bind="toAccountId">
+
+                    <option value="0">Select destination account</option>
+
+                    @foreach (var account in accounts)
+                    {
+                        <option value="@account.AccountId">
+                            @account.AccountName
+                        </option>
+                    }
+
+                </select>
+            </div>
+
+
+            <div>
+                <label class="form-label">Amount</label>
+
+                <input type="number"
+                       class="form-control"
+                       @bind="transferAmount"
+                       step="0.01"
+                       min="0.01"
+                       placeholder="Enter amount" />
+
+            </div>
+
+        </div>
+
+
+        <div class="mt-3">
+
+            <label class="form-label">Description</label>
+
+            <input type="text"
+                   class="form-control"
+                   @bind="transferDescription"
+                   placeholder="Optional description" />
+
+        </div>
+
+
+        <div class="form-action">
+
+            <button type="button"
+                    class="btn btn-primary"
+                    @onclick="TransferMoneyAsync">
+
+                <i class="bi bi-arrow-left-right me-2"></i>
+                Transfer Money
+
+            </button>
+
+        </div>
+
+
+        @if (!string.IsNullOrEmpty(transferError))
+        {
+            <div class="alert alert-danger mt-3 mb-0">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                @transferError
+            </div>
+        }
+
+
+        @if (!string.IsNullOrEmpty(transferSuccess))
+        {
+            <div class="alert alert-success mt-3 mb-0">
+                <i class="bi bi-check-circle me-2"></i>
+                @transferSuccess
+            </div>
+        }
+
+    </div>
+
+
+    <!-- =========================
+         TRANSACTION HISTORY
+         ========================= -->
+
+    <div class="transaction-section">
+
+        <div class="section-heading">
+            <div>
+                <h3>
+                    <i class="bi bi-clock-history me-2 text-primary"></i>
+                    Transaction History
+                </h3>
+
+                <p class="text-muted mb-0">
+                    View your recent financial activity
+                </p>
+            </div>
+        </div>
+
+
+        <div class="transaction-filter">
+
+            <label class="form-label">
+                Filter by Account
+            </label>
+
+            <select class="form-select"
+                    @bind="selectedAccountId"
+                    @bind:after="LoadTransactions">
+
+                <option value="0">All Accounts</option>
+
+                @foreach (var account in accounts ?? Enumerable.Empty<Account>())
+                {
+                    <option value="@account.AccountId">
+                        @account.AccountName
+                    </option>
+                }
+
+            </select>
+
+        </div>
+
+
+        @if (transactions == null)
+        {
+            <div class="transaction-empty">
+
+                <i class="bi bi-hourglass-split"></i>
+
+                <p>Loading transactions...</p>
+
+            </div>
+        }
+        else if (!transactions.Any())
+        {
+            <div class="transaction-empty">
+
+                <i class="bi bi-receipt"></i>
+
+                <p>No transactions found.</p>
+
+            </div>
+        }
+        else
+        {
+            <div class="transaction-table-wrapper">
+
+                <table class="transaction-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Description</th>
+                            <th>Account</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        @foreach (var transaction in transactions)
+                        {
+                            <tr>
+
+                                <td>
+                                    @transaction.TransactionDate.ToLocalTime()
+                                </td>
+
+
+                                <td>
+
+                                    <span class="transaction-type-badge
+                                        @(transaction.TransactionType == "Income"
+                                              ? "transaction-income"
+                                              : transaction.TransactionType == "Expense"
+                                                  ? "transaction-expense"
+                                                  : transaction.TransactionType == "Transfer"
+                                                      ? "transaction-transfer"
+                                                      : transaction.TransactionType == "Deposit"
+                                                          ? "transaction-deposit"
+                                                          : transaction.TransactionType == "LoanPayment"
+                                                              ? "transaction-loan-payment"
+                                                              : transaction.TransactionType == "LoanDisbursement"
+                                                                  ? "transaction-loan-disbursement"
+                                                                  : "transaction-other")">
+
+                                        @transaction.TransactionType
+
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+                                    @(transaction.CategoryName ?? "-")
+                                </td>
+
+
+                                <td class="transaction-amount">
+                                    ₹@transaction.Amount.ToString("N2")
+                                </td>
+
+
+                                <td>
+                                    @(transaction.Description ?? "-")
+                                </td>
+
+
+                                <td>
+                                    @(accounts?
+                                        .FirstOrDefault(a =>
+                                            a.AccountId == transaction.AccountId)
+                                        ?.AccountName ?? "Unknown")
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+
+@code
+{
+    private IEnumerable<Account> accounts = Enumerable.Empty<Account>();
+    private IEnumerable<Category> categories = Enumerable.Empty<Category>();
+    private IEnumerable<Transaction> transactions = Enumerable.Empty<Transaction>();
+
+    private int incomeAccountId;
+    private int incomeCategoryId;
+
+    private decimal incomeAmount;
+    private string? incomeDescription;
+    private string? incomeMessage;
+
+    private int expenseAccountId;
+    private int expenseCategoryId;
+
+    private decimal expenseAmount;
+    private string? expenseDescription;
+    private string? expenseMessage;
+
+    private int fromAccountId;
+    private int toAccountId;
+    private decimal transferAmount;
+    private string? transferDescription;
+
+    private string? transferError;
+    private string? transferSuccess;
+
+    private int selectedAccountId;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccounts();
+        await LoadCategories();
+        await LoadTransactions();
+    }
+
+
+    private async Task LoadAccounts()
+    {
+        var authState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var user = authState.User;
+
+        var userIdClaim =
+            user.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null)
+        {
+            return;
+        }
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        accounts =
+            await AccountService.GetMyAccountsAsync(userId);
+    }
+
+
+    private async Task LoadCategories()
+    {
+        var authState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var user = authState.User;
+
+        var userIdClaim =
+            user.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null)
+        {
+            return;
+        }
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        categories =
+            await CategoryService.GetMyCategoriesAsync(userId);
+    }
+
+
+    private async Task AddIncomeAsync()
+    {
+        try
+        {
+            incomeMessage = null;
+
+            if (incomeAccountId == 0)
+            {
+                incomeMessage = "Please select an account.";
+                return;
+            }
+
+            if (incomeCategoryId == 0)
+            {
+                incomeMessage = "Please select a category.";
+                return;
+            }
+
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            var userIdClaim =
+                user.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                incomeMessage = "User is not authenticated.";
+                return;
+            }
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            await AccountService.AddIncomeAsync(
+                userId,
+                incomeAccountId,
+                incomeAmount,
+                incomeCategoryId,
+                incomeDescription);
+
+            incomeMessage = "Income added successfully.";
+
+            incomeAmount = 0;
+            incomeDescription = null;
+            incomeCategoryId = 0;
+
+            await LoadAccounts();
+            await LoadTransactions();
+        }
+        catch (Exception ex)
+        {
+            incomeMessage = ex.Message;
+        }
+    }
+
+
+    private async Task AddExpenseAsync()
+    {
+        try
+        {
+            expenseMessage = null;
+
+            if (expenseAccountId == 0)
+            {
+                expenseMessage = "Please select an account.";
+                return;
+            }
+
+            if (expenseCategoryId == 0)
+            {
+                expenseMessage = "Please select a category.";
+                return;
+            }
+
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            var userIdClaim =
+                user.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                expenseMessage = "User is not authenticated.";
+                return;
+            }
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            await AccountService.AddExpenseAsync(
+                userId,
+                expenseAccountId,
+                expenseAmount,
+                expenseCategoryId,
+                expenseDescription);
+
+            expenseMessage = "Expense added successfully.";
+
+            expenseAmount = 0;
+            expenseDescription = null;
+            expenseCategoryId = 0;
+
+            await LoadAccounts();
+            await LoadTransactions();
+        }
+        catch (Exception ex)
+        {
+            expenseMessage = ex.Message;
+        }
+    }
+
+
+    private async Task LoadTransactions()
+    {
+        var authState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var user = authState.User;
+
+        var userIdClaim =
+            user.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null)
+        {
+            return;
+        }
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        var allTransactions =
+            await TransactionService.GetMyTransactionsAsync(userId);
+
+        if (selectedAccountId == 0)
+        {
+            transactions = allTransactions;
+        }
+        else
+        {
+            transactions =
+                allTransactions.Where(t =>
+                    t.AccountId == selectedAccountId);
+        }
+    }
+
+
+    private async Task TransferMoneyAsync()
+    {
+        transferError = null;
+        transferSuccess = null;
+
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var userIdClaim =
+                authState.User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                transferError = "User is not authenticated.";
+                return;
+            }
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            await AccountService.TransferAsync(
+                userId,
+                fromAccountId,
+                toAccountId,
+                transferAmount,
+                transferDescription);
+
+            transferSuccess = "Transfer completed successfully.";
+
+            // Reset form
+            fromAccountId = 0;
+            toAccountId = 0;
+            transferAmount = 0;
+            transferDescription = null;
+
+            // Refresh accounts and transactions
+            await LoadAccounts();
+            await LoadTransactions();
+        }
+        catch (Exception ex)
+        {
+            transferError = ex.Message;
+        }
+    }
+}

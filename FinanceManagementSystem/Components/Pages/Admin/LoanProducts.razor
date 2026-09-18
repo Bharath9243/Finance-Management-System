@@ -1,0 +1,531 @@
+﻿@page "/admin/loan-products"
+
+@using Microsoft.AspNetCore.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.JSInterop
+
+@attribute [Authorize]
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILoanProductService LoanProductService
+@inject IJSRuntime JS
+
+<PageTitle>Loan Products</PageTitle>
+
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Loan Products</h1>
+            <p class="text-muted mb-0">
+                Manage the loan products available to customers
+            </p>
+        </div>
+
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <button class="btn btn-primary"
+                        @onclick="StartCreate">
+                    <i class="bi bi-plus-lg me-2"></i>
+                    Add Loan Product
+                </button>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @errorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle me-2"></i>
+            @successMessage
+        </div>
+    }
+
+    <AuthorizeView Roles="Admin">
+        <Authorized>
+            @if (showForm)
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+
+                        <h4 class="mb-4">
+                            @(isEditMode ? "Edit Loan Product" : "Create Loan Product")
+                        </h4>
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Product Name
+                                </label>
+
+                                <input class="form-control"
+                                       @bind="product.Name"
+                                       placeholder="e.g. Education Loan" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Interest Rate (%)
+                                </label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       @bind="product.InterestRate"
+                                       min="0"
+                                       step="0.01" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Interest Type
+                                </label>
+
+                                <select class="form-select"
+                                        @bind="product.InterestType">
+
+                                    <option value="Simple">
+                                        Simple Interest
+                                    </option>
+
+                                    <option value="Compound">
+                                        Compound Interest
+                                    </option>
+
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Maximum Amount
+                                </label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       @bind="product.MaxAmount"
+                                       min="1"
+                                       step="0.01" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Maximum Tenure (Months)
+                                </label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       @bind="product.MaxTenureMonths"
+                                       min="1" />
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">
+                                    Description
+                                </label>
+
+                                <textarea class="form-control"
+                                          rows="3"
+                                          @bind="product.Description"
+                                          placeholder="Describe this loan product">
+                                </textarea>
+                            </div>
+
+                            @if (isEditMode)
+                            {
+                                <div class="col-12">
+                                    <div class="form-check">
+
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               @bind="product.IsActive"
+                                               id="activeProduct" />
+
+                                        <label class="form-check-label"
+                                               for="activeProduct">
+                                            Active
+                                        </label>
+
+                                    </div>
+                                </div>
+                            }
+
+                        </div>
+
+                        <div class="mt-4">
+
+                            <button class="btn btn-primary me-2"
+                                    @onclick="SaveProductAsync">
+
+                                <i class="bi bi-check-lg me-2"></i>
+                                @(isEditMode ? "Update Product" : "Create Product")
+
+                            </button>
+
+                            <button class="btn btn-secondary"
+                                    @onclick="CancelForm">
+
+                                Cancel
+
+                            </button>
+
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </Authorized>
+    </AuthorizeView>
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <h4 class="mb-4">Available Loan Products</h4>
+
+            @if (!loanProducts.Any())
+            {
+                <div class="text-center text-muted py-4">
+                    No loan products found.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Interest</th>
+                                <th>Maximum Amount</th>
+                                <th>Maximum Tenure</th>
+
+                                <AuthorizeView Roles="Admin">
+                                    <Authorized>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </Authorized>
+                                </AuthorizeView>
+
+                                <AuthorizeView Roles="User">
+                                    <Authorized>
+                                        <th>Actions</th>
+                                    </Authorized>
+                                </AuthorizeView>
+
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var item in loanProducts)
+                            {
+                                <tr>
+
+                                    <td>
+                                        <strong>
+                                            @item.Name
+                                        </strong>
+
+                                        @if (!string.IsNullOrWhiteSpace(item.Description))
+                                        {
+                                            <div class="small text-muted">
+                                                @item.Description
+                                            </div>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @item.InterestRate.ToString("0.##")%
+                                        <span class="text-muted">
+                                            (@item.InterestType)
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        ₹@item.MaxAmount.ToString("N2")
+                                    </td>
+
+                                    <td>
+                                        @item.MaxTenureMonths months
+                                    </td>
+
+                                    <AuthorizeView Roles="Admin">
+                                        <Authorized>
+
+                                            <td>
+                                                @if (item.IsActive)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        Active
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        Inactive
+                                                    </span>
+                                                }
+                                            </td>
+
+                                            <td>
+
+                                                @if (item.IsActive)
+                                                {
+                                                    <button class="btn btn-sm btn-outline-primary"
+                                                            @onclick="() => StartEdit(item)">
+                                                        <i class="bi bi-pencil me-1"></i>
+                                                        Edit
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn btn-sm btn-success"
+                                                            @onclick="() => ActivateProductAsync(item.LoanProductId)">
+                                                        <i class="bi bi-check-circle me-1"></i>
+                                                        Activate
+                                                    </button>
+                                                }
+
+                                            </td>
+
+                                        </Authorized>
+                                    </AuthorizeView>
+
+                                    <AuthorizeView Roles="User">
+                                        <Authorized>
+
+                                            <td>
+                                                <a class="btn btn-sm btn-primary"
+                                                   href="/loans">
+                                                    <i class="bi bi-arrow-right-circle me-1"></i>
+                                                    Apply
+                                                </a>
+                                            </td>
+
+                                        </Authorized>
+                                    </AuthorizeView>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+
+    private IEnumerable<LoanProduct> loanProducts =
+        Enumerable.Empty<LoanProduct>();
+
+    private LoanProduct product = new();
+
+    private bool showForm;
+    private bool isEditMode;
+
+    private string? errorMessage;
+    private string? successMessage;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProductsAsync();
+    }
+
+
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var isAdmin =
+                authState.User.IsInRole("Admin");
+
+            loanProducts = isAdmin
+                ? await LoanProductService.GetAllAsync()
+                : await LoanProductService.GetActiveAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+
+    private void StartCreate()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        product = new LoanProduct
+        {
+            InterestType = "Simple",
+            IsActive = true
+        };
+
+        isEditMode = false;
+        showForm = true;
+    }
+
+
+    private void StartEdit(LoanProduct item)
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        product = new LoanProduct
+        {
+            LoanProductId = item.LoanProductId,
+            Name = item.Name,
+            Description = item.Description,
+            InterestRate = item.InterestRate,
+            InterestType = item.InterestType,
+            MaxAmount = item.MaxAmount,
+            MaxTenureMonths = item.MaxTenureMonths,
+            IsActive = item.IsActive,
+            CreatedAt = item.CreatedAt
+        };
+
+        isEditMode = true;
+        showForm = true;
+    }
+
+
+    private async Task<int?> GetCurrentAdminIdAsync()
+    {
+        var authState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var adminIdClaim =
+            authState.User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier);
+
+        if (adminIdClaim == null)
+            return null;
+
+        return int.Parse(adminIdClaim.Value);
+    }
+
+
+    private async Task ActivateProductAsync(int loanProductId)
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var confirmed = await JS.InvokeAsync<bool>(
+                "confirm",
+                "Are you sure you want to activate this loan product?");
+
+            if (!confirmed)
+                return;
+
+            var adminId = await GetCurrentAdminIdAsync();
+
+            if (adminId == null)
+            {
+                errorMessage = "Admin is not authenticated.";
+                return;
+            }
+
+            var existingProduct =
+                await LoanProductService.GetByIdAsync(loanProductId);
+
+            if (existingProduct == null)
+            {
+                errorMessage = "Loan product not found.";
+                return;
+            }
+
+            existingProduct.IsActive = true;
+
+            await LoanProductService.UpdateAsync(
+                existingProduct,
+                adminId.Value);
+
+            successMessage =
+                $"{existingProduct.Name} activated successfully.";
+
+            await LoadProductsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+    
+    private async Task SaveProductAsync()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var adminId = await GetCurrentAdminIdAsync();
+
+            if (adminId == null)
+            {
+                errorMessage = "Admin is not authenticated.";
+                return;
+            }
+
+            if (isEditMode)
+            {
+                await LoanProductService.UpdateAsync(
+                    product,
+                    adminId.Value);
+
+                successMessage =
+                    "Loan product updated successfully.";
+            }
+            else
+            {
+                await LoanProductService.CreateAsync(
+                    product,
+                    adminId.Value);
+
+                successMessage =
+                    "Loan product created successfully.";
+            }
+
+            showForm = false;
+
+            await LoadProductsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+    
+    private void CancelForm()
+    {
+        showForm = false;
+        errorMessage = null;
+    }
+}

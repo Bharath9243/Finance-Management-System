@@ -1,0 +1,517 @@
+﻿/* =========================================
+   Finance Management - Application Layout
+   ========================================= */
+
+/* =========================
+   Base
+   ========================= */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+.app-shell {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    background: var(--app-bg);
+    color: var(--app-text);
+}
+
+/* =========================
+   Sidebar
+   ========================= */
+
+.app-sidebar {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--app-surface);
+    border-right: 1px solid var(--app-border);
+    padding: 24px 16px;
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+/* Brand */
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 8px 24px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--app-border);
+}
+
+.brand-logo {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2196f3, #2563eb);
+    color: #ffffff;
+    font-size: 29px;
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .brand-logo:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35);
+    }
+
+    .brand-logo span {
+        color: #ffffff !important;
+        line-height: 1;
+    }
+
+.brand-text {
+    color: var(--app-text);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.3px;
+}
+
+/* =========================
+   Navigation
+   ========================= */
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 45px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: var(--app-text-muted) !important;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+    .sidebar-link:hover {
+        background: var(--app-surface-secondary);
+        color: var(--app-primary) !important;
+        transform: translateX(2px);
+    }
+
+.sidebar-icon {
+    width: 24px;
+    min-width: 24px;
+    display: inline-flex;
+    justify-content: center;
+    font-size: 19px;
+}
+
+.sidebar-link.active {
+    background: rgba(13, 110, 253, 0.12);
+    color: var(--app-primary) !important;
+    font-weight: 600;
+}
+
+/* Notification badge */
+
+.notification-link {
+    position: relative;
+}
+
+.notification-badge {
+    margin-left: auto;
+    min-width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border-radius: 50px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Section title */
+
+.sidebar-section-title {
+    margin: 22px 12px 7px;
+    color: var(--app-text-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+}
+
+/* =========================
+   Sidebar Bottom
+   ========================= */
+
+.sidebar-bottom {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--app-border);
+}
+
+.theme-toggle,
+.logout-link {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    border: none;
+    background: transparent;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: var(--app-text-muted);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+    .theme-toggle:hover {
+        background: var(--app-surface-secondary);
+        color: var(--app-text);
+    }
+
+.logout-link {
+    color: #ef4444;
+}
+
+    .logout-link:hover {
+        background: rgba(239, 68, 68, 0.10);
+        color: #dc2626;
+    }
+
+/* =========================
+   Main Content
+   ========================= */
+
+.app-main {
+    width: calc(100% - 250px);
+    min-height: 100vh;
+    margin-left: 250px;
+    display: flex;
+    flex-direction: column;
+    background: var(--app-bg);
+}
+
+/* =========================
+   Top Bar
+   ========================= */
+
+.app-topbar {
+    width: 100%;
+    height: 72px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    background: var(--app-surface);
+    border-bottom: 1px solid var(--app-border);
+}
+
+.topbar-title {
+    color: var(--app-text-muted);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+/* Theme button */
+
+.topbar-theme-toggle {
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--app-border);
+    border-radius: 50%;
+    background: var(--app-surface-secondary);
+    color: var(--app-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 17px;
+    transition: all 0.2s ease;
+}
+
+    .topbar-theme-toggle:hover {
+        background: var(--app-primary);
+        color: #ffffff;
+        border-color: var(--app-primary);
+    }
+
+/* Date */
+
+.topbar-date {
+    color: var(--app-text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* =========================
+   User Profile
+   ========================= */
+
+.topbar-profile {
+    position: relative;
+}
+
+.profile-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--app-text);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+    .profile-button:hover {
+        background: var(--app-surface-secondary);
+    }
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--app-primary);
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.2;
+}
+
+.user-name {
+    color: var(--app-text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.user-role {
+    color: var(--app-text-muted);
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+.profile-chevron {
+    margin-left: 4px;
+    font-size: 11px;
+    color: var(--app-text-muted);
+}
+
+/* =========================
+   Profile Dropdown
+   ========================= */
+
+.profile-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 230px;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    z-index: 1100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-5px);
+    transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+}
+
+.topbar-profile:hover .profile-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Dropdown header */
+
+.profile-dropdown-header {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+    .profile-dropdown-header strong {
+        color: var(--app-text);
+        font-size: 15px;
+    }
+
+    .profile-dropdown-header span {
+        color: var(--app-text-muted);
+        font-size: 12px;
+    }
+
+.profile-divider {
+    height: 1px;
+    background: var(--app-border);
+    margin: 4px 0;
+}
+
+/* Dropdown items */
+
+.profile-dropdown-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--app-text);
+    text-decoration: none;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+}
+
+    .profile-dropdown-item:hover {
+        background: var(--app-surface-secondary);
+        color: var(--app-primary);
+    }
+
+    .profile-dropdown-item i {
+        width: 18px;
+        text-align: center;
+    }
+
+.logout-dropdown-item {
+    color: #ef4444;
+}
+
+    .logout-dropdown-item:hover {
+        color: #dc2626;
+        background: rgba(239, 68, 68, 0.08);
+    }
+
+/* =========================
+   Page Content
+   ========================= */
+
+.app-content {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    padding: 32px 36px;
+    background: var(--app-bg);
+}
+
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width: 900px) {
+    .app-sidebar {
+        width: 210px;
+    }
+
+    .app-main {
+        width: calc(100% - 210px);
+        margin-left: 210px;
+    }
+
+    .app-content {
+        padding: 24px;
+    }
+
+    .app-topbar {
+        padding: 0 24px;
+    }
+}
+
+@media (max-width: 700px) {
+    .app-sidebar {
+        width: 72px;
+        padding: 20px 10px;
+    }
+
+    .brand-text,
+    .sidebar-link span:not(.sidebar-icon),
+    .sidebar-section-title,
+    .theme-toggle span:last-child,
+    .logout-link span:last-child,
+    .user-info,
+    .topbar-title {
+        display: none;
+    }
+
+    .sidebar-brand {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .sidebar-link,
+    .theme-toggle,
+    .logout-link {
+        justify-content: center;
+        padding: 10px;
+    }
+
+    .sidebar-icon {
+        margin: 0;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+    }
+
+    .app-main {
+        width: calc(100% - 72px);
+        margin-left: 72px;
+    }
+
+    .app-content {
+        padding: 20px 16px;
+    }
+
+    .app-topbar {
+        padding: 0 16px;
+    }
+}

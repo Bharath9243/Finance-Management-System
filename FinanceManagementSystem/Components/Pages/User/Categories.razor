@@ -1,0 +1,257 @@
+﻿@page "/categories"
+@attribute [Authorize(Roles = "User")]
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICategoryService CategoryService
+
+<PageTitle>Categories</PageTitle>
+
+<div class="categories-page">
+
+    <!-- Page Header -->
+    <div class="categories-header">
+        <div>
+            <h1>Categories</h1>
+            <p>Organize your income and expenses with custom categories</p>
+        </div>
+    </div>
+
+
+    <!-- My Categories -->
+    <div class="category-section">
+
+        <div class="section-heading">
+            <div>
+                <h3>
+                    <i class="bi bi-tags me-2 text-primary"></i>
+                    My Categories
+                </h3>
+
+                <p class="text-muted mb-0">
+                    Categories available for your financial transactions
+                </p>
+            </div>
+
+            @if (categories != null)
+            {
+                <span class="category-count">
+                    @categories.Count() categor@(categories.Count() == 1 ? "y" : "ies")
+                </span>
+            }
+        </div>
+
+
+        @if (categories == null)
+        {
+            <div class="category-empty">
+                <i class="bi bi-hourglass-split"></i>
+                <p>Loading categories...</p>
+            </div>
+        }
+        else if (!categories.Any())
+        {
+            <div class="category-empty">
+                <i class="bi bi-tags"></i>
+                <p>You don't have any categories yet.</p>
+            </div>
+        }
+        else
+        {
+            <div class="category-list">
+
+                @foreach (var category in categories)
+                {
+                    <div class="category-card">
+
+                        <div class="category-card-icon
+                            @(category.Type == "Income"
+                                 ? "category-income-icon"
+                                 : "category-expense-icon")">
+
+                            @if (category.Type == "Income")
+                            {
+                                <i class="bi bi-arrow-down-circle-fill"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-arrow-up-circle-fill"></i>
+                            }
+
+                        </div>
+
+
+                        <div class="category-card-content">
+
+                            <h4>@category.Name</h4>
+
+                            <span class="category-type
+                                @(category.Type == "Income"
+                                      ? "category-income"
+                                      : "category-expense")">
+
+                                @category.Type
+
+                            </span>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+
+
+    <!-- Create Category -->
+    <div class="category-section">
+
+        <div class="section-heading">
+            <div>
+                <h3>
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>
+                    Create Category
+                </h3>
+
+                <p class="text-muted mb-0">
+                    Add a custom category for your income or expenses
+                </p>
+            </div>
+        </div>
+
+
+        <div class="category-form-grid">
+
+            <div>
+                <label class="form-label">Category Name</label>
+
+                <input class="form-control"
+                       @bind="categoryName"
+                       placeholder="e.g. Salary, Groceries, Rent" />
+            </div>
+
+
+            <div>
+                <label class="form-label">Type</label>
+
+                <select class="form-select"
+                        @bind="categoryType">
+
+                    <option value="Income">Income</option>
+                    <option value="Expense">Expense</option>
+
+                </select>
+            </div>
+
+        </div>
+
+
+        <div class="form-action">
+
+            <button type="button"
+                    class="btn btn-primary"
+                    @onclick="CreateCategoryAsync">
+
+                <i class="bi bi-plus-lg me-2"></i>
+                Create Category
+
+            </button>
+
+        </div>
+
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="category-message">
+                <i class="bi bi-check-circle me-2"></i>
+                @message
+            </div>
+        }
+
+    </div>
+
+</div>
+
+@code
+{
+    private IEnumerable<Category>? categories;
+
+    private string categoryName = string.Empty;
+    private string categoryType = "Income";
+
+    private string? message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+    }
+
+    private async Task LoadCategories()
+    {
+        var authState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var user = authState.User;
+
+        var userIdClaim =
+            user.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null)
+        {
+            return;
+        }
+
+        var userId = int.Parse(userIdClaim.Value);
+
+        categories =
+            await CategoryService.GetMyCategoriesAsync(userId);
+    }
+
+    private async Task CreateCategoryAsync()
+    {
+        try
+        {
+            message = null;
+
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            var userIdClaim =
+                user.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                message = "User is not authenticated.";
+                return;
+            }
+
+            var userId = int.Parse(userIdClaim.Value);
+
+            await CategoryService.CreateCategoryAsync(
+                userId,
+                categoryName,
+                categoryType);
+
+            message = "Category created successfully.";
+
+            categoryName = string.Empty;
+
+            await LoadCategories();
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+        }
+    }
+}

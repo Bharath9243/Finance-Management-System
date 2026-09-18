@@ -1,0 +1,259 @@
+﻿@page "/admin/loans"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+@attribute [Authorize(Roles = "Admin")]
+
+@inject ILoanService LoanService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Admin - Loans</PageTitle>
+
+<div class="admin-loans-page">
+
+    <div class="admin-loans-header">
+        <div>
+            <h1>Loan Applications</h1>
+            <p>Review, approve and reject user loan applications.</p>
+        </div>
+
+        @if (loans.Any())
+        {
+            <span class="admin-loans-count">
+                @loans.Count() Applications
+            </span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger admin-loans-alert">
+            @errorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success admin-loans-alert">
+            @successMessage
+        </div>
+    }
+
+    @if (!loans.Any())
+    {
+        <div class="admin-loans-section admin-loans-empty">
+            <div class="admin-loans-empty-icon">
+                <i class="bi bi-file-earmark-x"></i>
+            </div>
+
+            <h3>No loan applications</h3>
+
+            <p>No loan applications found.</p>
+        </div>
+    }
+    else
+    {
+        <div class="admin-loans-section">
+
+            <div class="admin-loans-table-wrapper">
+                <table class="admin-loans-table">
+
+                    <thead>
+                        <tr>
+                            <th>Loan ID</th>
+                            <th>User ID</th>
+                            <th>Account ID</th>
+                            <th>Principal</th>
+                            <th>Interest</th>
+                            <th>Total Payable</th>
+                            <th>Outstanding</th>
+                            <th>Type</th>
+                            <th>Tenure</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var loan in loans)
+                        {
+                            <tr>
+                                <td class="admin-loan-id">
+                                    #@loan.LoanId
+                                </td>
+
+                                <td>
+                                    User #@loan.UserId
+                                </td>
+
+                                <td>
+                                    @loan.AccountId
+                                </td>
+
+                                <td class="admin-loan-amount">
+                                    ₹@loan.PrincipalAmount.ToString("N2")
+                                </td>
+
+                                <td>
+                                    ₹@loan.TotalInterest.ToString("N2")
+                                </td>
+
+                                <td class="admin-loan-amount">
+                                    ₹@loan.TotalPayable.ToString("N2")
+                                </td>
+
+                                <td class="admin-loan-outstanding">
+                                    ₹@loan.OutstandingAmount.ToString("N2")
+                                </td>
+
+                                <td>
+                                    <span class="admin-interest-type">
+                                        @loan.InterestType
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @loan.TenureMonths months
+                                </td>
+
+                                <td>
+                                    <span class="admin-loan-status
+                                        @(loan.Status == "Pending" ? "status-pending" :
+                                            loan.Status == "Active" ? "status-active" :
+                                            loan.Status == "Paid" ? "status-paid" :
+                                            loan.Status == "Rejected" ? "status-rejected" :
+                                            "status-other")">
+                                        @loan.Status
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @if (loan.Status == "Pending")
+                                    {
+                                        <div class="admin-loan-actions">
+
+                                            <button class="admin-approve-button"
+                                                    @onclick="() => ApproveLoanAsync(loan.LoanId)">
+                                                <i class="bi bi-check-lg"></i>
+                                                Approve
+                                            </button>
+
+                                            <button class="admin-reject-button"
+                                                    @onclick="() => RejectLoanAsync(loan.LoanId)">
+                                                <i class="bi bi-x-lg"></i>
+                                                Reject
+                                            </button>
+
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="admin-no-action">
+                                            No action
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    }
+
+</div>
+
+@code {
+    private IEnumerable<Loan> loans = Enumerable.Empty<Loan>();
+
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLoansAsync();
+    }
+
+    private async Task LoadLoansAsync()
+    {
+        loans = await LoanService.GetAllLoansAsync();
+    }
+
+    private async Task ApproveLoanAsync(int loanId)
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var adminIdClaim =
+                authState.User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (adminIdClaim == null)
+            {
+                errorMessage = "Admin is not authenticated.";
+                return;
+            }
+
+            var adminUserId = int.Parse(adminIdClaim.Value);
+
+            await LoanService.ApproveLoanAsync(
+                adminUserId,
+                loanId);
+
+            successMessage =
+                $"Loan #{loanId} approved successfully.";
+
+            await LoadLoansAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task RejectLoanAsync(int loanId)
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var adminIdClaim =
+                authState.User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (adminIdClaim == null)
+            {
+                errorMessage = "Admin is not authenticated.";
+                return;
+            }
+
+            var adminUserId = int.Parse(adminIdClaim.Value);
+
+            await LoanService.RejectLoanAsync(
+                adminUserId,
+                loanId);
+
+            successMessage =
+                $"Loan #{loanId} rejected.";
+
+            await LoadLoansAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

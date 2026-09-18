@@ -1,0 +1,194 @@
+﻿@page "/notifications"
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
+
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Notifications</PageTitle>
+
+<div class="notifications-page">
+
+    <div class="notifications-header">
+        <div>
+            <h1>Notifications</h1>
+            <p>View your latest account and loan updates.</p>
+        </div>
+
+        @if (UnreadCount > 0)
+        {
+            <span class="notification-count">
+                @UnreadCount unread
+            </span>
+        }
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="notification-section notification-loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger notification-alert">
+            @ErrorMessage
+        </div>
+    }
+    else if (!NotificationList.Any())
+    {
+        <div class="notification-section notification-empty">
+            <div class="notification-empty-icon">
+                <i class="bi bi-bell-slash"></i>
+            </div>
+
+            <h3>No notifications</h3>
+
+            <p>
+                You're all caught up.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="notification-section">
+
+            <div class="notification-list">
+
+                @foreach (var notification in NotificationList)
+                {
+                    <div class="notification-card @(notification.IsRead ? "" : "notification-unread")">
+
+                        <div class="notification-icon
+                            @(notification.IsRead ? "notification-icon-read" : "notification-icon-unread")">
+                            <i class="bi bi-bell"></i>
+                        </div>
+
+                        <div class="notification-content">
+
+                            <div class="notification-title-row">
+
+                                <h3>@notification.Title</h3>
+
+                                @if (!notification.IsRead)
+                                {
+                                    <span class="notification-new">
+                                        New
+                                    </span>
+                                }
+
+                            </div>
+
+                            <p class="notification-message">
+                                @notification.Message
+                            </p>
+
+                            <span class="notification-date">
+                                <i class="bi bi-clock"></i>
+                                @(notification.CreatedAt.ToLocalTime()
+                                    .ToString("dd MMM yyyy, hh:mm tt"))
+                            </span>
+
+                        </div>
+
+                        @if (!notification.IsRead)
+                        {
+                            <button class="notification-read-button"
+                                    @onclick="() => MarkAsReadAsync(notification.NotificationId)">
+                                <i class="bi bi-check2"></i>
+                                Mark as read
+                            </button>
+                        }
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private IEnumerable<Notification> NotificationList =
+        Enumerable.Empty<Notification>();
+
+    private bool IsLoading = true;
+
+    private string? ErrorMessage;
+
+    private int UnreadCount =>
+        NotificationList.Count(n => !n.IsRead);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNotificationsAsync();
+    }
+
+    private async Task LoadNotificationsAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = null;
+
+            var userId = await GetCurrentUserIdAsync();
+
+            NotificationList =
+                await NotificationService
+                    .GetMyNotificationsAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task MarkAsReadAsync(int notificationId)
+    {
+        try
+        {
+            var userId = await GetCurrentUserIdAsync();
+
+            await NotificationService.MarkAsReadAsync(
+                userId,
+                notificationId);
+
+            await LoadNotificationsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    private async Task<int> GetCurrentUserIdAsync()
+    {
+        var authState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var userIdClaim =
+            authState.User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null)
+            throw new UnauthorizedAccessException(
+                "User is not authenticated.");
+
+        return int.Parse(userIdClaim.Value);
+    }
+}

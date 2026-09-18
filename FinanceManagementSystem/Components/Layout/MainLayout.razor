@@ -1,0 +1,398 @@
+﻿@implements IDisposable
+@inherits LayoutComponentBase
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.JSInterop
+@using FinanceManagementSystem.Services.Interfaces
+
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<div class="app-shell">
+
+    <aside class="app-sidebar">
+
+        <div class="sidebar-brand">
+            <div class="brand-logo">
+                <span>₹</span>
+            </div>
+
+            <div class="brand-text">
+                <div>Finance</div>
+                <div>Management</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+
+            <Authorized>
+
+                <AuthorizeView Roles="Admin">
+                    <Authorized>
+
+                        <NavLink class="sidebar-link"
+                                 href="/admin"
+                                 Match="NavLinkMatch.All">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-speedometer2"></i>
+                            </span>
+                            <span>Admin Dashboard</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link"
+                                 href="/admin/users">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-people"></i>
+                            </span>
+                            <span>Users</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link"
+                                 href="/admin/loan-products">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-box-seam"></i>
+                            </span>
+                            <span>Loan Products</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link"
+                                 href="/admin/pending-loans">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-hourglass-split"></i>
+                            </span>
+                            <span>Pending Loans</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link"
+                                 href="/admin/active-loans">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-check-circle"></i>
+                            </span>
+                            <span>Active Loans</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link"
+                                 href="/admin/activity-history">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-clock-history"></i>
+                            </span>
+                            <span>Activity History</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link notification-link"
+                                 href="/notifications">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-bell"></i>
+                            </span>
+                            <span>Notifications</span>
+
+                            @if (UnreadNotificationCount > 0)
+                            {
+                                <span class="notification-badge">
+                                    @UnreadNotificationCount
+                                </span>
+                            }
+                        </NavLink>
+
+                    </Authorized>
+                </AuthorizeView>
+
+                <AuthorizeView Roles="User">
+                    <Authorized>
+
+                        <NavLink class="sidebar-link"
+                                 href="/dashboard"
+                                 Match="NavLinkMatch.All">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-grid-1x2-fill"></i>
+                            </span>
+                            <span>Dashboard</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link"
+                                 href="/accounts">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-wallet2"></i>
+                            </span>
+                            <span>Accounts</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link"
+                                 href="/transactions">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-list-ul"></i>
+                            </span>
+                            <span>Transactions</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link"
+                                 href="/categories">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-tags"></i>
+                            </span>
+                            <span>Categories</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link"
+                                 href="/admin/loan-products">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-cash-stack"></i>
+                            </span>
+                            <span>Loan Products</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link"
+                                 href="/loans">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-bank"></i>
+                            </span>
+                            <span>Loans</span>
+                        </NavLink>
+
+                        <NavLink class="sidebar-link notification-link"
+                                 href="/notifications">
+                            <span class="sidebar-icon">
+                                <i class="bi bi-bell"></i>
+                            </span>
+                            <span>Notifications</span>
+
+                            @if (UnreadNotificationCount > 0)
+                            {
+                                <span class="notification-badge">
+                                    @UnreadNotificationCount
+                                </span>
+                            }
+                        </NavLink>
+
+                    </Authorized>
+                </AuthorizeView>
+
+            </Authorized>
+
+        </nav>
+
+    </aside>
+
+    <div class="app-main">
+
+        <header class="app-topbar">
+
+            <span class="topbar-title">
+                Finance Management System
+            </span>
+
+            <div class="topbar-right">
+
+                <!-- Theme Toggle -->
+                <button class="topbar-theme-toggle"
+                        @onclick="ToggleThemeAsync"
+                        title="Toggle theme">
+
+                    <i class="bi @(IsDarkMode ? "bi-sun-fill" : "bi-moon-fill")"></i>
+                </button>
+
+                <!-- Current Date -->
+                <span class="topbar-date">
+                    @DateTime.Now.ToString("dddd, dd MMMM yyyy")
+                </span>
+
+                <!-- User Profile -->
+                <div class="topbar-profile">
+
+                    <div class="profile-button">
+
+                        <div class="user-avatar">
+                            @GetUserInitial()
+                        </div>
+
+                        <div class="user-info">
+                            <span class="user-name">
+                                @GetUserName()
+                            </span>
+
+                            <span class="user-role">
+                                @(IsAdmin() ? "Administrator" : "Personal Account")
+                            </span>
+                        </div>
+
+                        <i class="bi bi-chevron-down profile-chevron"></i>
+
+                    </div>
+
+                    <div class="profile-dropdown">
+
+                        <div class="profile-dropdown-header">
+                            <strong>@GetUserName()</strong>
+
+                            <span>
+                                @(IsAdmin() ? "Administrator" : "Personal Account")
+                            </span>
+                        </div>
+
+                        <div class="profile-divider"></div>
+
+                        <a href="/profile"
+                           class="profile-dropdown-item">
+                            <i class="bi bi-person"></i>
+                            <span>Profile</span>
+                        </a>
+
+                        <form method="post"
+                              action="/account/logout">
+
+                            <button type="submit"
+                                    class="profile-dropdown-item logout-dropdown-item">
+
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Logout</span>
+
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <main class="app-content">
+            @Body
+        </main>
+
+    </div>
+
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+
+    private int UnreadNotificationCount;
+    private bool IsDarkMode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+
+        await LoadUnreadNotificationCountAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await JS.InvokeVoidAsync("themeManager.initialize");
+
+        var theme =
+            await JS.InvokeAsync<string?>(
+                "localStorage.getItem",
+                "theme");
+
+        IsDarkMode = theme == "dark";
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ToggleThemeAsync()
+    {
+        IsDarkMode =
+            await JS.InvokeAsync<bool>(
+                "themeManager.toggle");
+    }
+
+    private async void OnLocationChanged(
+        object? sender,
+        LocationChangedEventArgs e)
+    {
+        await LoadUnreadNotificationCountAsync();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadUnreadNotificationCountAsync()
+    {
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            if (!authState.User.Identity?.IsAuthenticated ?? true)
+            {
+                UnreadNotificationCount = 0;
+                return;
+            }
+
+            var userIdClaim =
+                authState.User.FindFirst(
+                    ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                UnreadNotificationCount = 0;
+                return;
+            }
+
+            var userId =
+                int.Parse(userIdClaim.Value);
+
+            var notifications =
+                await NotificationService
+                    .GetMyNotificationsAsync(userId);
+
+            UnreadNotificationCount =
+                notifications.Count(n => !n.IsRead);
+        }
+        catch
+        {
+            UnreadNotificationCount = 0;
+        }
+    }
+
+    private string GetUserName()
+    {
+        var authState =
+            AuthenticationStateProvider
+                .GetAuthenticationStateAsync()
+                .GetAwaiter()
+                .GetResult();
+
+        return authState.User.Identity?.Name ?? "User";
+    }
+
+    private string GetUserInitial()
+    {
+        var name = GetUserName();
+
+        return string.IsNullOrWhiteSpace(name)
+            ? "U"
+            : name.Substring(0, 1).ToUpper();
+    }
+
+    private bool IsAdmin()
+    {
+        var authState =
+            AuthenticationStateProvider
+                .GetAuthenticationStateAsync()
+                .GetAwaiter()
+                .GetResult();
+
+        return authState.User.IsInRole("Admin");
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

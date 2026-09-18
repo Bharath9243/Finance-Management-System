@@ -1,0 +1,310 @@
+﻿/* =========================================
+   Finance Management - Loans
+   ========================================= */
+
+.loans-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* =========================
+   Page Header
+   ========================= */
+
+.loans-header {
+    margin-bottom: 32px;
+}
+
+    .loans-header h1 {
+        margin: 0;
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--app-text);
+    }
+
+    .loans-header p {
+        margin: 8px 0 0;
+        color: var(--app-text-muted);
+        font-size: 15px;
+    }
+
+/* =========================
+   Loan Sections
+   ========================= */
+
+.loan-section {
+    margin-bottom: 24px;
+    padding: 28px;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.loan-section-heading {
+    margin-bottom: 24px;
+}
+
+    .loan-section-heading h3 {
+        margin: 0 0 6px;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--app-text);
+    }
+
+    .loan-section-heading p {
+        color: var(--app-text-muted) !important;
+    }
+
+/* =========================
+   Loan Forms
+   ========================= */
+
+.loan-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.loan-section .form-label {
+    margin-bottom: 8px;
+    color: var(--app-text);
+    font-weight: 500;
+}
+
+.loan-section .form-control,
+.loan-section .form-select {
+    min-height: 46px;
+    background: var(--app-surface);
+    color: var(--app-text);
+    border-color: var(--app-border);
+    border-radius: 10px;
+}
+
+    .loan-section .form-control::placeholder {
+        color: var(--app-text-muted);
+    }
+
+    .loan-section .form-control:focus,
+    .loan-section .form-select:focus {
+        background: var(--app-surface);
+        color: var(--app-text);
+        border-color: var(--app-primary);
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12);
+    }
+
+.loan-section .input-group-text {
+    background: var(--app-surface-secondary);
+    color: var(--app-text-muted);
+    border-color: var(--app-border);
+}
+
+.loan-form-action {
+    margin-top: 22px;
+}
+
+/* =========================
+   Alerts
+   ========================= */
+
+.loan-alert {
+    margin-bottom: 20px;
+    border-radius: 10px;
+}
+
+/* =========================
+   Loan Heading / Count
+   ========================= */
+
+.loan-heading-with-count {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.loan-count {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    background: var(--app-primary-soft);
+    color: var(--app-primary);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* =========================
+   Loan Table
+   ========================= */
+
+.loan-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--app-border);
+    border-radius: 14px;
+}
+
+.loan-table {
+    width: 100%;
+    min-width: 1000px;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+    .loan-table thead th {
+        padding: 16px;
+        background: var(--app-surface-secondary);
+        color: var(--app-text);
+        border-bottom: 1px solid var(--app-border);
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+    }
+
+    .loan-table tbody tr {
+        background: var(--app-surface);
+        transition: background-color 0.15s ease;
+    }
+
+        .loan-table tbody tr:nth-child(even) {
+            background: var(--app-surface-secondary);
+        }
+
+        .loan-table tbody tr:hover {
+            background: var(--app-primary-soft);
+        }
+
+    .loan-table tbody td {
+        padding: 17px 16px;
+        vertical-align: middle;
+        color: var(--app-text);
+        border-bottom: 1px solid var(--app-border);
+        white-space: nowrap;
+    }
+
+    .loan-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+/* =========================
+   Loan Amounts / ID
+   ========================= */
+
+.loan-id {
+    color: var(--app-primary) !important;
+    font-weight: 700;
+}
+
+.loan-amount {
+    font-weight: 600;
+}
+
+.loan-outstanding {
+    font-weight: 700;
+}
+
+/* =========================
+   Loan Status
+   ========================= */
+
+.loan-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.loan-status-pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+}
+
+.loan-status-active {
+    background: rgba(13, 110, 253, 0.15);
+    color: #0d6efd;
+}
+
+.loan-status-paid {
+    background: rgba(25, 135, 84, 0.15);
+    color: #198754;
+}
+
+.loan-status-rejected {
+    background: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
+}
+
+.loan-status-other {
+    background: rgba(108, 117, 125, 0.12);
+    color: #6c757d;
+}
+
+/* =========================
+   Empty State
+   ========================= */
+
+.loan-empty {
+    padding: 45px 20px;
+    color: var(--app-text-muted);
+    text-align: center;
+}
+
+    .loan-empty i {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 38px;
+    }
+
+    .loan-empty p {
+        margin: 0;
+    }
+
+/* =========================
+   Payment History
+   ========================= */
+
+.payment-history-table {
+    min-width: 700px;
+}
+
+    .payment-history-table tbody td {
+        font-size: 14px;
+    }
+
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width: 900px) {
+    .loan-form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .loans-header h1 {
+        font-size: 28px;
+    }
+
+    .loan-section {
+        padding: 20px;
+        border-radius: 14px;
+    }
+
+    .loan-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .loan-heading-with-count {
+        flex-direction: column;
+    }
+}

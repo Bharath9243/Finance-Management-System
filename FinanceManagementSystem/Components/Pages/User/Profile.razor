@@ -1,0 +1,206 @@
+﻿@page "/profile"
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@attribute [Authorize]
+
+@inject IUserService UserService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Profile</PageTitle>
+
+<div class="container py-4">
+
+    <div class="mb-4">
+        <h1>Profile</h1>
+        <p class="text-muted mb-0">
+            View your account information
+        </p>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border" role="status"></div>
+            <p class="text-muted mt-3">
+                Loading profile...
+            </p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @errorMessage
+        </div>
+    }
+    else if (user != null)
+    {
+        <div class="card shadow-sm">
+
+            <div class="card-body">
+
+                <div class="d-flex align-items-center mb-4">
+
+                    <div class="rounded-circle bg-primary text-white
+                        d-flex align-items-center justify-content-center"
+                         style="width:60px;height:60px;font-size:24px;">
+
+                        @GetInitials(user.Name)
+
+                    </div>
+
+                    <div class="ms-3">
+                        <h4 class="mb-1">@user.Name</h4>
+                        <span class="badge bg-primary">
+                            @user.Role
+                        </span>
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <div class="row g-4 mt-1">
+
+                    <div class="col-md-6">
+
+                        <small class="text-muted">
+                            Full Name
+                        </small>
+
+                        <div class="fw-semibold">
+                            @user.Name
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <small class="text-muted">
+                            Email
+                        </small>
+
+                        <div class="fw-semibold">
+                            @user.Email
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <small class="text-muted">
+                            Role
+                        </small>
+
+                        <div class="fw-semibold">
+                            @user.Role
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <small class="text-muted">
+                            Member Since
+                        </small>
+
+                        <div class="fw-semibold">
+                            @user.CreatedAt.ToLocalTime()
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+
+@code {
+
+    private User? user;
+
+    private bool isLoading = true;
+
+    private string? errorMessage;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+
+    private async Task LoadProfileAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var userIdClaim =
+                authState.User
+                    .FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                errorMessage =
+                    "User is not authenticated.";
+
+                return;
+            }
+
+            var userId =
+                int.Parse(userIdClaim.Value);
+
+            user = await UserService.GetByIdAsync(userId);
+
+            if (user == null)
+            {
+                errorMessage =
+                    "User profile could not be found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "?";
+
+        var parts =
+            name.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length == 1)
+            return parts[0][0].ToString().ToUpper();
+
+        return
+            $"{parts[0][0]}{parts[^1][0]}"
+                .ToUpper();
+    }
+
+}

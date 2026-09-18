@@ -1,0 +1,442 @@
+﻿@page "/loans/{LoanId:int}"
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@attribute [Authorize(Roles = "User")]
+
+@inject ILoanService LoanService
+@inject ILoanPaymentService LoanPaymentService
+@inject ILoanProductService LoanProductService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Loan Details</PageTitle>
+
+<div class="container py-4">
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border" role="status"></div>
+            <p class="text-muted mt-3">Loading loan details...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @errorMessage
+        </div>
+
+        <a href="/loans" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-2"></i>
+            Back to Loans
+        </a>
+    }
+    else if (loan != null)
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <div>
+                <h1>Loan #@loan.LoanId</h1>
+                <p class="text-muted mb-0">
+                    View your loan details and payment history
+                </p>
+            </div>
+
+            <a href="/loans" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Back to Loans
+            </a>
+
+        </div>
+
+        <!-- Loan Overview -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+
+                    <h4 class="mb-0">
+                        Loan Overview
+                    </h4>
+
+                    @if (loan.Status == "Pending")
+                    {
+                        <span class="badge bg-warning text-dark">
+                            Pending
+                        </span>
+                    }
+                    else if (loan.Status == "Active")
+                    {
+                        <span class="badge bg-success">
+                            Active
+                        </span>
+                    }
+                    else if (loan.Status == "Paid")
+                    {
+                        <span class="badge bg-primary">
+                            Paid
+                        </span>
+                    }
+                    else if (loan.Status == "Rejected")
+                    {
+                        <span class="badge bg-danger">
+                            Rejected
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">
+                            @loan.Status
+                        </span>
+                    }
+
+                </div>
+
+                <div class="row g-4">
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Loan Product</small>
+
+                        <div class="fw-semibold">
+                            @(loanProduct?.Name ?? "Unknown")
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Account</small>
+
+                        <div class="fw-semibold">
+                            Account #@loan.AccountId
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Principal Amount</small>
+
+                        <div class="fs-5 fw-semibold">
+                            ₹@loan.PrincipalAmount.ToString("N2")
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Interest Rate</small>
+
+                        <div class="fw-semibold">
+                            @loan.InterestRate.ToString("0.##")%
+                            (@loan.InterestType)
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Tenure</small>
+
+                        <div class="fw-semibold">
+                            @loan.TenureMonths months
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Total Interest</small>
+
+                        <div class="fw-semibold">
+                            ₹@loan.TotalInterest.ToString("N2")
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Total Payable</small>
+
+                        <div class="fw-semibold">
+                            ₹@loan.TotalPayable.ToString("N2")
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Outstanding Amount</small>
+
+                        <div class="fs-5 fw-semibold">
+                            ₹@loan.OutstandingAmount.ToString("N2")
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Applied On</small>
+
+                        <div>
+                            @loan.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Approved On</small>
+
+                        <div>
+                            @(loan.ApprovedAt.HasValue
+                                ? loan.ApprovedAt.Value.ToLocalTime()
+                                    .ToString("dd MMM yyyy, hh:mm tt")
+                                : "Not approved")
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">Start Date</small>
+
+                        <div>
+                            @(loan.StartDate.HasValue
+                                ? loan.StartDate.Value.ToString("dd MMM yyyy")
+                                : "Not started")
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Product Information -->
+        @if (loanProduct != null)
+        {
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-body">
+
+                    <h4 class="mb-3">
+                        Loan Product Information
+                    </h4>
+
+                    @if (!string.IsNullOrWhiteSpace(loanProduct.Description))
+                    {
+                        <p class="text-muted">
+                            @loanProduct.Description
+                        </p>
+                    }
+
+                    <div class="row g-3">
+
+                        <div class="col-md-4">
+                            <small class="text-muted">
+                                Interest Rate
+                            </small>
+
+                            <div class="fw-semibold">
+                                @loanProduct.InterestRate.ToString("0.##")%
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <small class="text-muted">
+                                Maximum Amount
+                            </small>
+
+                            <div class="fw-semibold">
+                                ₹@loanProduct.MaxAmount.ToString("N2")
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <small class="text-muted">
+                                Maximum Tenure
+                            </small>
+
+                            <div class="fw-semibold">
+                                @loanProduct.MaxTenureMonths months
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+
+        <!-- Payment History -->
+
+        <div class="card shadow-sm">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+
+                    <div>
+                        <h4 class="mb-1">
+                            Payment History
+                        </h4>
+
+                        <p class="text-muted mb-0">
+                            Payments made toward this loan
+                        </p>
+                    </div>
+
+                    <span class="badge bg-light text-dark">
+                        @payments.Count() Payments
+                    </span>
+
+                </div>
+
+                @if (!payments.Any())
+                {
+                    <div class="text-center text-muted py-4">
+
+                        <i class="bi bi-credit-card fs-2"></i>
+
+                        <p class="mt-2 mb-0">
+                            No payments have been made yet.
+                        </p>
+
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+
+                        <table class="table table-hover align-middle">
+
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Principal Paid</th>
+                                    <th>Interest Paid</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var payment in payments)
+                                {
+                                    <tr>
+
+                                        <td>
+                                            <td>@payment.PaymentDate.ToLocalTime()</td>
+                                        </td>
+
+                                        <td class="fw-semibold">
+                                            ₹@payment.Amount.ToString("N2")
+                                        </td>
+
+                                        <td>
+                                            ₹@payment.PrincipalPaid.ToString("N2")
+                                        </td>
+
+                                        <td>
+                                            ₹@payment.InterestPaid.ToString("N2")
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    }
+</div>
+
+
+@code {
+
+    [Parameter]
+    public int LoanId { get; set; }
+
+    private Loan? loan;
+    private LoanProduct? loanProduct;
+
+    private IEnumerable<LoanPayment> payments =
+        Enumerable.Empty<LoanPayment>();
+
+    private bool isLoading = true;
+
+    private string? errorMessage;
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadLoanAsync();
+    }
+
+
+    private async Task LoadLoanAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var userId = await GetCurrentUserIdAsync();
+
+            if (userId == null)
+            {
+                errorMessage = "User is not authenticated.";
+                return;
+            }
+
+            loan =
+                await LoanService
+                    .GetMyLoanAsync(
+                        userId.Value,
+                        LoanId);
+
+            if (loan == null)
+            {
+                errorMessage =
+                    "Loan not found or you do not have access to this loan.";
+
+                return;
+            }
+
+            loanProduct =
+                await LoanProductService
+                    .GetByIdAsync(loan.LoanProductId);
+
+            payments =
+                await LoanPaymentService
+                    .GetPaymentHistoryAsync(
+                        userId.Value,
+                        LoanId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task<int?> GetCurrentUserIdAsync()
+    {
+        var authState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var userIdClaim =
+            authState.User
+                .FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null)
+            return null;
+
+        return int.Parse(userIdClaim.Value);
+    }
+
+}
+

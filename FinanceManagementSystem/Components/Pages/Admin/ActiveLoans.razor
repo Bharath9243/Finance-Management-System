@@ -1,0 +1,132 @@
+﻿@page "/admin/active-loans"
+
+@using Microsoft.AspNetCore.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject ILoanService LoanService
+
+<PageTitle>Active Loans</PageTitle>
+
+<div class="admin-loans-page">
+
+    <div class="admin-loans-header">
+        <div>
+            <h1>Active Loans</h1>
+            <p>Monitor currently active loans and their outstanding amounts.</p>
+        </div>
+
+        @if (activeLoans.Any())
+        {
+            <span class="admin-loans-count">
+                @activeLoans.Count() Active
+            </span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger admin-loans-alert">
+            @errorMessage
+        </div>
+    }
+
+    @if (!activeLoans.Any())
+    {
+        <div class="admin-loans-section admin-loans-empty">
+            <div class="admin-loans-empty-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+
+            <h3>No active loans</h3>
+
+            <p>There are currently no active loans.</p>
+        </div>
+    }
+    else
+    {
+        <div class="admin-loans-section">
+
+            <div class="admin-loans-table-wrapper">
+                <table class="admin-loans-table">
+
+                    <thead>
+                        <tr>
+                            <th>Loan ID</th>
+                            <th>User ID</th>
+                            <th>Principal</th>
+                            <th>Total Payable</th>
+                            <th>Outstanding</th>
+                            <th>Tenure</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var loan in activeLoans)
+                        {
+                            <tr>
+                                <td class="admin-loan-id">
+                                    #@loan.LoanId
+                                </td>
+
+                                <td>
+                                    User #@loan.UserId
+                                </td>
+
+                                <td class="admin-loan-amount">
+                                    ₹@loan.PrincipalAmount.ToString("N2")
+                                </td>
+
+                                <td class="admin-loan-amount">
+                                    ₹@loan.TotalPayable.ToString("N2")
+                                </td>
+
+                                <td class="admin-loan-outstanding">
+                                    ₹@loan.OutstandingAmount.ToString("N2")
+                                </td>
+
+                                <td>
+                                    @loan.TenureMonths months
+                                </td>
+
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private IEnumerable<Loan> activeLoans =
+        Enumerable.Empty<Loan>();
+
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadActiveLoansAsync();
+    }
+
+    private async Task LoadActiveLoansAsync()
+    {
+        try
+        {
+            var loans = await LoanService.GetAllLoansAsync();
+
+            activeLoans = loans
+                .Where(loan => loan.Status == "Active");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

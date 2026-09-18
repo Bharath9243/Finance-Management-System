@@ -1,0 +1,164 @@
+﻿@page "/register"
+
+@using FinanceManagementSystem.Services.Interfaces
+@using FinanceManagementSystem.Models
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Register</PageTitle>
+
+<div class="auth-page">
+
+    <div class="auth-card">
+
+        <!-- Brand -->
+        <div class="auth-brand">
+            <div class="auth-logo">
+                ₹
+            </div>
+
+            <h1>Finance Management</h1>
+            <p>Take control of your finances</p>
+        </div>
+
+        <!-- Heading -->
+        <div class="auth-heading">
+            <h2>Create your account</h2>
+            <p>Start managing your finances in one place</p>
+        </div>
+
+        <!-- Error -->
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger auth-alert">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                @errorMessage
+            </div>
+        }
+
+        <EditForm Model="registerModel" OnValidSubmit="RegisterUserAsync">
+            <DataAnnotationsValidator />
+
+            <div class="auth-field">
+                <label class="form-label">
+                    <i class="bi bi-person me-2"></i>
+                    Name
+                </label>
+
+                <InputText class="form-control"
+                           @bind-Value="registerModel.Name"
+                           placeholder="Enter your name" />
+
+                <ValidationMessage For="@(() => registerModel.Name)" />
+            </div>
+
+            <div class="auth-field">
+                <label class="form-label">
+                    <i class="bi bi-envelope me-2"></i>
+                    Email
+                </label>
+
+                <InputText class="form-control"
+                           @bind-Value="registerModel.Email"
+                           placeholder="Enter your email" />
+
+                <ValidationMessage For="@(() => registerModel.Email)" />
+            </div>
+
+            <div class="auth-field">
+                <label class="form-label">
+                    <i class="bi bi-lock me-2"></i>
+                    Password
+                </label>
+
+                <InputText class="form-control"
+                           type="password"
+                           @bind-Value="registerModel.Password"
+                           placeholder="Create a password" />
+
+                <ValidationMessage For="@(() => registerModel.Password)" />
+            </div>
+
+            <div class="auth-field">
+                <label class="form-label">
+                    <i class="bi bi-lock-fill me-2"></i>
+                    Confirm Password
+                </label>
+
+                <InputText class="form-control"
+                           type="password"
+                           @bind-Value="registerModel.ConfirmPassword"
+                           placeholder="Re-enter your password" />
+
+                <ValidationMessage For="@(() => registerModel.ConfirmPassword)" />
+            </div>
+
+            <button type="submit" class="btn btn-primary auth-submit">
+                <i class="bi bi-person-plus me-2"></i>
+                Create Account
+            </button>
+
+        </EditForm>
+
+        <!-- Login -->
+        <div class="auth-footer">
+            <span>Already have an account?</span>
+            <a href="/login">Login</a>
+        </div>
+
+        <!-- Security -->
+        <div class="auth-security">
+            <i class="bi bi-shield-check me-1"></i>
+            Your financial information is securely managed
+        </div>
+
+    </div>
+
+</div>
+
+@code
+{
+    private RegisterModel registerModel = new();
+    private string? errorMessage;
+
+    private async Task RegisterUserAsync()
+    {
+        errorMessage = null;
+
+        var success = await AuthService.RegisterAsync(
+            registerModel.Name,
+            registerModel.Email,
+            registerModel.Password);
+
+        if (!success)
+        {
+            errorMessage = "Email is already registered.";
+            return;
+        }
+
+        Navigation.NavigateTo("/login");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            var role = authState.User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (role == "Admin")
+            {
+                Navigation.NavigateTo("/admin", replace: true);
+            }
+            else
+            {
+                Navigation.NavigateTo("/dashboard", replace: true);
+            }
+        }
+    }
+}

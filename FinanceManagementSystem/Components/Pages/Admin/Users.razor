@@ -1,0 +1,125 @@
+﻿@page "/admin/users"
+
+@using Microsoft.AspNetCore.Authorization
+@using FinanceManagementSystem.Models
+@using FinanceManagementSystem.Services.Interfaces
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IUserService UserService
+
+<PageTitle>Users</PageTitle>
+
+<div class="admin-loans-page">
+
+    <div class="admin-loans-header">
+        <div>
+            <h1>Users</h1>
+            <p>View registered users and their account details.</p>
+        </div>
+
+        @if (users.Any())
+        {
+            <span class="admin-loans-count">
+                @users.Count() Users
+            </span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger admin-loans-alert">
+            @errorMessage
+        </div>
+    }
+
+    @if (!users.Any())
+    {
+        <div class="admin-loans-section admin-loans-empty">
+            <div class="admin-loans-empty-icon">
+                <i class="bi bi-people"></i>
+            </div>
+
+            <h3>No users found</h3>
+
+            <p>There are currently no registered users.</p>
+        </div>
+    }
+    else
+    {
+        <div class="admin-loans-section">
+
+            <div class="admin-loans-table-wrapper">
+                <table class="admin-loans-table">
+
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var user in users)
+                        {
+                            <tr>
+                                <td class="admin-loan-id">
+                                    #@user.UserId
+                                </td>
+
+                                <td>
+                                    @user.Name
+                                </td>
+
+                                <td>
+                                    @user.Email
+                                </td>
+
+                                <td>
+                                    @user.Role
+                                </td>
+
+                                <td>
+                                    @user.CreatedAt.ToString("dd MMM yyyy")
+                                </td>
+
+                                <td>
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       href="@($"/admin/users/{user.UserId}")">
+                                        <i class="bi bi-eye me-1"></i>
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private IEnumerable<User> users = Enumerable.Empty<User>();
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            users = await UserService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}
