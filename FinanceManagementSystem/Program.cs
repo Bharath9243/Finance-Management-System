@@ -22,6 +22,7 @@ builder.Services.AddScoped<ILoanPaymentRepository, LoanPaymentRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<ILoanProductRepository, LoanProductRepository>();
 builder.Services.AddScoped<IAdminActivityRepository, AdminActivityRepository>();
+builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -34,6 +35,8 @@ builder.Services.AddScoped<ILoanPaymentService, LoanPaymentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ILoanProductService, LoanProductService>();
 builder.Services.AddScoped<IAdminActivityService, AdminActivityService>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

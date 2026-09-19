@@ -83,5 +83,26 @@ public class UserRepository : IUserRepository
 
         return await connection.QueryAsync<User>(sql);
     }
+
+    public async Task UpdatePasswordHashAsync(
+    int userId,
+    string passwordHash)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+
+        const string sql = """
+        UPDATE Users
+        SET PasswordHash = @PasswordHash
+        WHERE UserId = @UserId
+        """;
+
+        await connection.ExecuteAsync(
+            sql,
+            new
+            {
+                UserId = userId,
+                PasswordHash = passwordHash
+            });
+    }
 }
 

@@ -13,4 +13,6 @@ public interface IUserRepository
     Task<IEnumerable<User>> GetUsersByRoleAsync(string role);
 
     Task<IEnumerable<User>> GetAllAsync();
+
+    Task UpdatePasswordHashAsync(int userId, string passwordHash);
 }
