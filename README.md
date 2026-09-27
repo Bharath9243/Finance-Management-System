@@ -179,21 +179,6 @@ Important administrator actions are recorded through an activity history system 
 
 ---
 
-# 🧮 Loan Management
-
-The application contains a dedicated loan calculation and management workflow.
-
-## Supported Interest Types
-
-### Simple Interest
-
-The system supports simple-interest calculations based on:
-
-```text
-Interest = Principal × Rate × Time
-
-
-
 ┌─────────────────────────────────────┐
 │        Blazor Web App / UI          │
 │        Razor Components             │
