@@ -91,16 +91,17 @@ The application uses **database transactions** for critical financial operations
 - View payment history
 - Automatic loan balance updates
 
-#### 🔔 Notifications
+#### 🔔 Notifications & Email Alerts
 
-Users receive notifications for important events such as:
+Users receive in-app notifications and email alerts for important events such as:
 
-- Loan applications
-- Loan approvals
-- Loan rejections
+- Loan application submitted
+- Loan application approved
+- Loan application rejected
+- Loan disbursement
 - Loan payments
 - Fully paid loans
-- System notifications
+- Other important account and system events
 
 #### 📊 User Dashboard
 
@@ -289,6 +290,7 @@ The application follows a layered architecture separating UI, business logic, an
 | **Interactive Server**          | Server-side interactive UI    |
 | **C#**                          | Application development       |
 | **Dapper**                      | Data access / micro ORM       |
+| **SMTP / Email Service**        | Email notifications           |
 | **Microsoft SQL Server**        | Relational database           |
 | **Microsoft.Data.SqlClient**    | SQL Server connectivity       |
 | **BCrypt.Net-Next**             | Password hashing              |
@@ -589,6 +591,10 @@ Key areas include:
 **Database integrity**
 
 > Foreign keys, check constraints, unique constraints, defaults, and indexes are used to enforce data integrity.
+
+**Notifications**
+
+> Users receive real-time in-app notifications and email alerts for important loan and financial events.
 
 ---
 
