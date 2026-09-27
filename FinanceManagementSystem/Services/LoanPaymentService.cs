@@ -1,4 +1,5 @@
-﻿using FinanceManagementSystem.Data;
+﻿using FinanceManagementSystem.Components.Pages.Admin;
+using FinanceManagementSystem.Data;
 using FinanceManagementSystem.Models;
 using FinanceManagementSystem.Repositories.Interfaces;
 using FinanceManagementSystem.Services.Interfaces;
@@ -13,6 +14,8 @@ public class LoanPaymentService : ILoanPaymentService
     private readonly ILoanPaymentRepository _loanPaymentRepository;
     private readonly ITransactionRepository _transactionRepository;
     private readonly INotificationRepository _notificationRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IEmailService _emailService;
 
     public LoanPaymentService(
         DbConnectionFactory connectionFactory,
@@ -20,7 +23,9 @@ public class LoanPaymentService : ILoanPaymentService
         IAccountRepository accountRepository,
         ILoanPaymentRepository loanPaymentRepository,
         ITransactionRepository transactionRepository,
-        INotificationRepository notificationRepository)
+        INotificationRepository notificationRepository,
+        IUserRepository userRepository,
+        IEmailService emailService)
     {
         _connectionFactory = connectionFactory;
         _loanRepository = loanRepository;
@@ -28,6 +33,8 @@ public class LoanPaymentService : ILoanPaymentService
         _loanPaymentRepository = loanPaymentRepository;
         _transactionRepository = transactionRepository;
         _notificationRepository = notificationRepository;
+        _userRepository = userRepository;
+        _emailService = emailService;
     }
 
     public async Task MakePaymentAsync(
@@ -193,6 +200,26 @@ public class LoanPaymentService : ILoanPaymentService
             }
 
             dbTransaction.Commit();
+
+            var user = await _userRepository.GetByIdAsync(userId);
+
+            if (user != null)
+            {
+                await _emailService.SendLoanPaymentEmailAsync(
+                    user.Email,
+                    loan.LoanId,
+                    amount,
+                    principalPaid,
+                    interestPaid,
+                    newOutstanding);
+
+                if (newOutstanding == 0)
+                {
+                    await _emailService.SendLoanPaidEmailAsync(
+                        user.Email,
+                        loan.LoanId);
+                }
+            }
         }
         catch
         {

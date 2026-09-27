@@ -1,6 +1,7 @@
 ﻿using FinanceManagementSystem.Models;
 using FinanceManagementSystem.Repositories.Interfaces;
 using FinanceManagementSystem.Services;
+using FinanceManagementSystem.Services.Interfaces;
 using Moq;
 
 namespace FinanceManagementSystem.Tests;
@@ -12,6 +13,8 @@ public class LoanPaymentServiceTests
     private readonly Mock<ILoanPaymentRepository> _loanPaymentRepository = new();
     private readonly Mock<ITransactionRepository> _transactionRepository = new();
     private readonly Mock<INotificationRepository> _notificationRepository = new();
+    private readonly Mock<IUserRepository> _userRepository = new();
+    private readonly Mock<IEmailService> _emailService = new();
 
     private LoanPaymentService CreateService()
     {
@@ -21,7 +24,9 @@ public class LoanPaymentServiceTests
             _accountRepository.Object,
             _loanPaymentRepository.Object,
             _transactionRepository.Object,
-            _notificationRepository.Object);
+            _notificationRepository.Object,
+            _userRepository.Object,
+            _emailService.Object);
     }
 
     [Fact]
@@ -144,4 +149,3 @@ public class LoanPaymentServiceTests
             service.MakePaymentAsync(1, 1, 1, 1000));
     }
 }
-

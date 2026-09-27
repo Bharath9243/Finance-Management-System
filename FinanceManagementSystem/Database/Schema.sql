@@ -25,21 +25,62 @@ CREATE TABLE Users
 );
 
 
+/* =========================================================
+   1.1 PASSWORD RESET TOKENS
+   ========================================================= */
+
+CREATE TABLE PasswordResetTokens
+(
+    TokenId INT IDENTITY(1,1) PRIMARY KEY,
+
+    UserId INT NOT NULL,
+
+    Token NVARCHAR(200) NOT NULL,
+
+    ExpiresAt DATETIME2 NOT NULL,
+
+    IsUsed BIT NOT NULL
+        CONSTRAINT DF_PasswordResetTokens_IsUsed DEFAULT 0,
+
+    CreatedAt DATETIME2 NOT NULL
+        CONSTRAINT DF_PasswordResetTokens_CreatedAt
+        DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT FK_PasswordResetTokens_Users
+        FOREIGN KEY (UserId)
+        REFERENCES Users(UserId)
+);
+
+CREATE INDEX IX_PasswordResetTokens_Token
+ON PasswordResetTokens(Token);
+
+
+/* =========================================================
+   1.2 ADMIN ACTIVITIES
+   ========================================================= */
+
 CREATE TABLE AdminActivities
 (
     AdminActivityId INT IDENTITY(1,1) PRIMARY KEY,
+
     AdminUserId INT NOT NULL,
+
     Action NVARCHAR(50) NOT NULL,
+
     EntityType NVARCHAR(50) NOT NULL,
+
     EntityId INT NULL,
+
     Description NVARCHAR(500) NULL,
-    CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
+
+    CreatedAt DATETIME2 NOT NULL
+        CONSTRAINT DF_AdminActivities_CreatedAt
+        DEFAULT SYSUTCDATETIME(),
 
     CONSTRAINT FK_AdminActivities_Users
         FOREIGN KEY (AdminUserId)
         REFERENCES Users(UserId)
 );
-
 
 
 /* =========================================================
@@ -49,15 +90,19 @@ CREATE TABLE AdminActivities
 CREATE TABLE Accounts
 (
     AccountId INT IDENTITY(1,1) PRIMARY KEY,
+
     UserId INT NOT NULL,
+
     AccountName NVARCHAR(100) NOT NULL,
+
     AccountType NVARCHAR(30) NOT NULL,
 
     Balance DECIMAL(18,2) NOT NULL
         CONSTRAINT DF_Accounts_Balance DEFAULT 0,
 
     CreatedAt DATETIME2 NOT NULL
-        CONSTRAINT DF_Accounts_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT DF_Accounts_CreatedAt
+        DEFAULT SYSUTCDATETIME(),
 
     CONSTRAINT FK_Accounts_Users
         FOREIGN KEY (UserId)
@@ -81,8 +126,11 @@ CREATE TABLE Accounts
 CREATE TABLE Categories
 (
     CategoryId INT IDENTITY(1,1) PRIMARY KEY,
+
     UserId INT NOT NULL,
+
     Name NVARCHAR(100) NOT NULL,
+
     Type NVARCHAR(20) NOT NULL,
 
     CONSTRAINT FK_Categories_Users
@@ -106,6 +154,7 @@ CREATE TABLE Transfers
     TransferId INT IDENTITY(1,1) PRIMARY KEY,
 
     FromAccountId INT NOT NULL,
+
     ToAccountId INT NOT NULL,
 
     Amount DECIMAL(18,2) NOT NULL,
@@ -180,10 +229,12 @@ CREATE TABLE Loans
     LoanId INT IDENTITY(1,1) PRIMARY KEY,
 
     UserId INT NOT NULL,
-AccountId INT NOT NULL,
-LoanProductId INT NOT NULL,
 
-PrincipalAmount DECIMAL(18,2) NOT NULL,
+    AccountId INT NOT NULL,
+
+    LoanProductId INT NOT NULL,
+
+    PrincipalAmount DECIMAL(18,2) NOT NULL,
 
     InterestRate DECIMAL(5,2) NOT NULL,
 
@@ -203,7 +254,8 @@ PrincipalAmount DECIMAL(18,2) NOT NULL,
     StartDate DATE NULL,
 
     CreatedAt DATETIME2 NOT NULL
-        CONSTRAINT DF_Loans_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT DF_Loans_CreatedAt
+        DEFAULT SYSUTCDATETIME(),
 
     ApprovedAt DATETIME2 NULL,
 
@@ -215,9 +267,9 @@ PrincipalAmount DECIMAL(18,2) NOT NULL,
         FOREIGN KEY (AccountId)
         REFERENCES Accounts(AccountId),
 
-        CONSTRAINT FK_Loans_LoanProducts
-    FOREIGN KEY (LoanProductId)
-    REFERENCES LoanProducts(LoanProductId),
+    CONSTRAINT FK_Loans_LoanProducts
+        FOREIGN KEY (LoanProductId)
+        REFERENCES LoanProducts(LoanProductId),
 
     CONSTRAINT CK_Loans_Principal
         CHECK (PrincipalAmount > 0),
@@ -264,11 +316,13 @@ CREATE TABLE LoanPayments
     PaymentId INT IDENTITY(1,1) PRIMARY KEY,
 
     LoanId INT NOT NULL,
+
     AccountId INT NOT NULL,
 
     Amount DECIMAL(18,2) NOT NULL,
 
     PrincipalPaid DECIMAL(18,2) NOT NULL,
+
     InterestPaid DECIMAL(18,2) NOT NULL,
 
     PaymentDate DATETIME2 NOT NULL
@@ -308,6 +362,7 @@ CREATE TABLE Notifications
     UserId INT NOT NULL,
 
     Title NVARCHAR(150) NOT NULL,
+
     Message NVARCHAR(500) NOT NULL,
 
     NotificationType NVARCHAR(30) NOT NULL,
@@ -350,8 +405,11 @@ CREATE TABLE Transactions
     AccountId INT NOT NULL,
 
     CategoryId INT NULL,
+
     TransferId INT NULL,
+
     LoanId INT NULL,
+
     LoanPaymentId INT NULL,
 
     TransactionType NVARCHAR(30) NOT NULL,
@@ -419,5 +477,3 @@ ON LoanPayments(LoanId, PaymentDate DESC);
 
 CREATE INDEX IX_Notifications_UserId_Read
 ON Notifications(UserId, IsRead, CreatedAt DESC);
-
-

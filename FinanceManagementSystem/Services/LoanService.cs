@@ -17,6 +17,7 @@ public class LoanService : ILoanService
     private readonly INotificationRepository _notificationRepository;
     private readonly ILoanProductService _loanProductService;
     private readonly IAdminActivityService _adminActivityService;
+    private readonly IEmailService _emailService;
 
     public LoanService(
     DbConnectionFactory connectionFactory,
@@ -27,7 +28,8 @@ public class LoanService : ILoanService
     ITransactionRepository transactionRepository,
     INotificationRepository notificationRepository,
     ILoanProductService loanProductService,
-    IAdminActivityService adminActivityService)
+    IAdminActivityService adminActivityService,
+    IEmailService emailService)
     {
         _connectionFactory = connectionFactory;
         _userRepository = userRepository;
@@ -38,6 +40,7 @@ public class LoanService : ILoanService
         _notificationRepository = notificationRepository;
         _loanProductService = loanProductService;
         _adminActivityService = adminActivityService;
+        _emailService = emailService;
     }
 
     public async Task<int> ApplyForLoanAsync(
@@ -167,6 +170,16 @@ public class LoanService : ILoanService
 
             dbTransaction.Commit();
 
+            var user = await _userRepository.GetByIdAsync(userId);
+
+            if (user != null)
+            {
+                await _emailService.SendLoanApplicationEmailAsync(
+                    user.Email,
+                    loanId,
+                    principalAmount);
+            }
+
             return loanId;
         }
         catch
@@ -291,6 +304,16 @@ public class LoanService : ILoanService
     dbTransaction);
 
             dbTransaction.Commit();
+
+            var user = await _userRepository.GetByIdAsync(loan.UserId);
+
+            if (user != null)
+            {
+                await _emailService.SendLoanApprovalEmailAsync(
+                    user.Email,
+                    loan.LoanId,
+                    loan.PrincipalAmount);
+            }
         }
         catch
         {
@@ -347,6 +370,15 @@ public class LoanService : ILoanService
     dbTransaction);
 
             dbTransaction.Commit();
+
+            var user = await _userRepository.GetByIdAsync(loan.UserId);
+
+            if (user != null)
+            {
+                await _emailService.SendLoanRejectionEmailAsync(
+                    user.Email,
+                    loan.LoanId);
+            }
         }
         catch
         {

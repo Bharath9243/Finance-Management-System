@@ -16,6 +16,7 @@ public class LoanServiceTests
     private readonly Mock<INotificationRepository> _notificationRepository = new();
     private readonly Mock<ILoanProductService> _loanProductService = new();
     private readonly Mock<IAdminActivityService> _adminActivityService = new();
+    private readonly Mock<IEmailService> _emailService = new();
 
     private LoanService CreateService()
     {
@@ -28,7 +29,8 @@ public class LoanServiceTests
             _transactionRepository.Object,
             _notificationRepository.Object,
             _loanProductService.Object,
-            _adminActivityService.Object);
+            _adminActivityService.Object,
+            _emailService.Object);
     }
 
     [Fact]

@@ -214,8 +214,11 @@ BEGIN TRY
     ------------------------------------------------------------
 
     DECLARE @DemoSavingsAccountId INT;
+
     DECLARE @SalaryCategoryId INT;
+
     DECLARE @FoodCategoryId INT;
+
     DECLARE @TransportCategoryId INT;
 
     SELECT @DemoSavingsAccountId = AccountId
@@ -342,12 +345,23 @@ BEGIN TRY
 
 
     ------------------------------------------------------------
-    -- Set Demo Savings balance
-    ------------------------------------------------------------
+-- Set Demo Savings balance
+------------------------------------------------------------
 
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM Transactions
+    WHERE AccountId = @DemoSavingsAccountId
+      AND TransactionType = 'LoanDisbursement'
+      AND Amount = 40000.00
+      AND Description = 'Loan disbursement'
+)
+BEGIN
     UPDATE Accounts
     SET Balance = 103000.00
     WHERE AccountId = @DemoSavingsAccountId;
+END;
 
 
     ------------------------------------------------------------
@@ -381,7 +395,7 @@ BEGIN TRY
             500000.00,
             60,
             1,
-            GETDATE()
+            SYSUTCDATETIME()
         );
     END;
 
@@ -413,7 +427,7 @@ BEGIN TRY
             200000.00,
             24,
             1,
-            GETDATE()
+            SYSUTCDATETIME()
         );
     END;
 
@@ -482,7 +496,7 @@ BEGIN TRY
             44000.00,
             44000.00,
             'Active',
-            CAST(GETDATE() AS DATE),
+            CAST(SYSUTCDATETIME() AS DATE),
             SYSUTCDATETIME()
         );
 
@@ -544,6 +558,7 @@ BEGIN TRY
         );
 
     END;
+
 
     ------------------------------------------------------------
     -- 9. Commit
