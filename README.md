@@ -1,85 +1,193 @@
-# Finance Management System
+# 💰 Finance Management System
 
-A personal finance and loan management web application built with **Blazor Web App**, **.NET 10**, **Dapper**, and **SQL Server**.
+A full-stack **personal finance and loan management web application** built with **Blazor Web App, .NET 10, Dapper, and Microsoft SQL Server**.
 
-The system allows users to manage accounts, income, expenses, transfers, and loans, while administrators can review loan applications, manage loan products, and monitor important system activity.
+The application provides a centralized platform for users to manage their accounts, income, expenses, transfers, and loans, while administrators can manage loan products, review loan applications, monitor active loans, and track administrative activities.
 
-## Features
+---
 
-### User
-- User registration and login
-- Role-based authentication and authorization
-- Manage savings, checking, and cash accounts
-- Deposit and withdraw funds
-- Transfer money between own accounts
-- Record and view income and expenses
-- Manage transaction categories
-- Apply for loans from active loan products
-- View loan details and payment history
+## 🚀 Overview
+
+The **Finance Management System** is designed to simulate a real-world financial management platform with separate experiences for **Users** and **Administrators**.
+
+### Users can:
+
+- Manage multiple financial accounts
+- Track income and expenses
+- Transfer money between accounts
+- Apply for and manage loans
 - Make partial or full loan payments
-- Track outstanding loan amount
-- View in-app notifications
-- Personal finance dashboard
+- Monitor outstanding loan balances
+- Receive financial notifications
+- View financial activity through dashboards
 
-### Admin
-- Admin dashboard with system-level statistics
-- View registered users
-- View user account details
-- Create and update loan products
-- Activate/deactivate loan products
-- Review pending loan applications
+### Administrators can:
+
+- Monitor overall system activity
+- Manage users
+- Create and manage loan products
+- Review loan applications
 - Approve or reject loan applications
-- Disburse approved loans into user accounts
-- View active loans
-- View admin activity history
+- Monitor active loans
+- View administrative activity history
 
-## Loan Management
+The application uses **database transactions** for critical financial operations to maintain consistency between account balances, transactions, loans, payments, and notifications.
 
-The system supports:
+---
 
-- Simple interest
-- Compound interest calculated monthly
-- Configurable interest rates
-- Maximum loan amount and tenure based on loan products
-- Partial and full payments
-- Interest-first payment allocation
-- Automatic outstanding balance tracking
-- Loan status flow:
-  - Pending
-  - Active
-  - Paid
-  - Rejected
+## ✨ Features
 
-Loan approval/disbursement and loan payments use database transactions so related financial changes are committed together or rolled back on failure.
+### 👤 User Features
 
-## Transaction Safety
+#### Authentication & Account Management
 
-Financial operations are designed to maintain consistent account balances.
+- User registration
+- Secure login and logout
+- Cookie-based authentication
+- Role-based authorization
+- Password hashing using BCrypt
+- Forgot password functionality
+- Password reset workflow
+- User profile management
 
-Examples include:
+#### 💳 Financial Accounts
 
-- Deposit → account balance update + transaction record
-- Withdrawal → balance validation + balance update + transaction record
-- Transfer → source debit + destination credit + transfer record + transaction records
-- Loan disbursement → loan update + account credit + transaction + notification
-- Loan payment → account debit + payment allocation + loan update + transaction + notification
+- Create and manage accounts
+- Supported account types:
+  - Savings
+  - Checking
+  - Cash
+- View account balances
+- Deposit money
+- Withdraw money
+- Prevent invalid withdrawals
 
-Database transactions are used for multi-step financial operations to prevent partial updates when an operation fails.
+#### 💵 Income & Expenses
 
-## Architecture
+- Record income
+- Record expenses
+- Categorize financial transactions
+- View transaction history
+- Track financial activity by account
+- Separate income and expense categories
 
-The application follows a layered architecture:
+#### 🔄 Money Transfers
+
+- Transfer money between personal accounts
+- Validate source and destination accounts
+- Validate available balance
+- Record transfer history
+- Create corresponding transaction records
+
+#### 🏦 Loan Management
+
+- Browse available loan products
+- Apply for loans
+- View loan details
+- Track loan status
+- View outstanding balance
+- Make partial loan payments
+- Make full loan payments
+- View payment history
+- Automatic loan balance updates
+
+#### 🔔 Notifications
+
+Users receive notifications for important events such as:
+
+- Loan applications
+- Loan approvals
+- Loan rejections
+- Loan payments
+- Fully paid loans
+- System notifications
+
+#### 📊 User Dashboard
+
+The user dashboard provides an overview of:
+
+- Account balances
+- Income
+- Expenses
+- Transactions
+- Loans
+- Outstanding loan amounts
+- Financial activity
+
+---
+
+# 🛡️ Admin Features
+
+Administrators have a dedicated management area.
+
+### 📊 Admin Dashboard
+
+Provides system-level information and financial statistics.
+
+### 👥 User Management
+
+Administrators can:
+
+- View registered users
+- View individual user details
+- Inspect user accounts
+- Review user-related financial information
+
+### 🏦 Loan Product Management
+
+Administrators can:
+
+- Create loan products
+- Update loan products
+- Activate/deactivate loan products
+- Configure:
+  - Interest rate
+  - Interest type
+  - Maximum loan amount
+  - Maximum tenure
+
+Supported interest types:
+
+- Simple Interest
+- Compound Interest
+
+### 📋 Loan Application Management
+
+Administrators can:
+
+- View pending applications
+- Review loan details
+- Approve applications
+- Reject applications
+- Monitor approved and active loans
+
+### 💳 Active Loan Management
+
+Administrators can monitor:
+
+- Active loans
+- Principal amount
+- Interest
+- Total payable amount
+- Outstanding balance
+- Loan status
+- Payment activity
+
+### 📝 Activity History
+
+Important administrator actions are recorded through an activity history system for better traceability.
+
+---
+
+# 🧮 Loan Management
+
+The application contains a dedicated loan calculation and management workflow.
+
+## Supported Interest Types
+
+### Simple Interest
+
+The system supports simple-interest calculations based on:
 
 ```text
-Blazor Web App / Razor Components
-            │
-            ▼
-        Services
-   (Business Logic)
-            │
-            ▼
-       Repositories
-      (Dapper / SQL)
-            │
-            ▼
-        SQL Server
+Interest = Principal × Rate × Time
