@@ -191,3 +191,33 @@ The system supports simple-interest calculations based on:
 
 ```text
 Interest = Principal × Rate × Time
+
+
+
+┌─────────────────────────────────────┐
+│        Blazor Web App / UI          │
+│        Razor Components             │
+└──────────────────┬──────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────┐
+│             Services                │
+│          Business Logic             │
+│                                     │
+│  Account │ Loan │ Transaction       │
+│  Payment │ Auth │ Notification      │
+└──────────────────┬──────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────┐
+│           Repositories              │
+│             Dapper                  │
+│                                     │
+│  CRUD + SQL Queries + Transactions  │
+└──────────────────┬──────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────┐
+│           SQL Server                │
+│       FinanceManagementDB           │
+└─────────────────────────────────────┘
